@@ -207,15 +207,6 @@ Next Sprint
 
 ---
 
-## 👥 Team
-
-**PrepNova** is being developed as a collaborative **BCA 5th Semester Minor Project**.
-
-* 👨‍💻 Team Member 1 — Developer
-* 👨‍💻 Team Member 2 — Developer
-* 👨‍💻 Team Member 3 — Developer
-
----
 
 ## 📌 Project Status
 
