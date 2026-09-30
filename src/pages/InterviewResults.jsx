@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
-import Navbar from '../components/Navbar'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import Badge from '../components/Badge'
 import Loader from '../components/Loader'
+import PageHeader from '../components/PageHeader'
+import { BriefcaseBusiness, Download, FileText, Repeat2 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function InterviewResults() {
   const { id } = useParams()
@@ -14,6 +16,21 @@ export default function InterviewResults() {
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [retrying, setRetrying] = useState(false)
+  const [exporting, setExporting] = useState('')
+  const { user } = useAuth()
+
+  const handleRetry = async () => {
+    setRetrying(true)
+    try {
+      const { data: retry } = await api.post(`/interviews/${id}/retry`)
+      navigate(`/interview/start/${retry.interviewId}`)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not start focused practice')
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -35,24 +52,18 @@ export default function InterviewResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface">
-        <Navbar />
-        <div className="max-w-2xl mx-auto p-6 flex justify-center">
-          <Loader size="lg" />
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader size="lg" />
       </div>
     )
   }
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-surface">
-        <Navbar />
-        <div className="max-w-lg mx-auto p-6 text-center">
-          <p className="text-gray-500 mb-4">No results to show.</p>
-          <Button onClick={() => navigate('/interview/setup')}>Start New Interview</Button>
-        </div>
-      </div>
+      <Card className="mx-auto max-w-lg text-center">
+        <p className="mb-4 text-muted">No results to show.</p>
+        <Button onClick={() => navigate('/interview/setup')}>Start New Interview</Button>
+      </Card>
     )
   }
 
@@ -60,12 +71,54 @@ export default function InterviewResults() {
   const overallScore = evaluation.overallScore
   const qTextById = new Map((interview.questions || []).map((q) => [String(q.id), q.question_text]))
   const questionEvaluations = evaluation.questionEvaluations || []
+  const retryCount = questionEvaluations.filter((question) => Number(question.score) < 7).length || Math.min(3, questionEvaluations.length)
+
+  const handleDownloadReport = async (format) => {
+    setExporting(format)
+    try {
+      const exporter = await import('../services/reportExport.js')
+      if (format === 'pdf') {
+        await exporter.downloadInterviewPdf(interview, evaluation, user?.name)
+      } else {
+        await exporter.downloadInterviewDocx(interview, evaluation, user?.name)
+      }
+      toast.success(`${format.toUpperCase()} report downloaded`)
+    } catch (err) {
+      console.error('Report export failed', err)
+      toast.error(`Could not create the ${format.toUpperCase()} report`)
+    } finally {
+      setExporting('')
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-surface">
-      <Navbar />
-      <div className="max-w-2xl mx-auto p-6 animate-fade-in-up">
-        {/* Score hero */}
+    <div className="animate-fade-in">
+      <PageHeader
+        icon="📊"
+        title="Interview Results"
+        subtitle={`${interview.mode} · ${interview.domain} · ${interview.difficulty}`}
+        actions={(
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="success">{overallScore}%</Badge>
+            <Button size="sm" variant="outline" loading={exporting === 'pdf'} disabled={Boolean(exporting)} onClick={() => handleDownloadReport('pdf')}>
+              <Download size={15} /> PDF
+            </Button>
+            <Button size="sm" variant="outline" loading={exporting === 'docx'} disabled={Boolean(exporting)} onClick={() => handleDownloadReport('docx')}>
+              <FileText size={15} /> DOCX
+            </Button>
+          </div>
+        )}
+      />
+      {interview.targetRole && (
+        <Card className="mb-6 flex items-start gap-3 border-primary/20 bg-primary/5 animate-fade-in-up">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><BriefcaseBusiness size={17} /></span>
+          <div>
+            <p className="text-sm font-semibold text-ink">Feedback for {interview.targetRole}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">{evaluation.source === 'ai' ? (interview.jobDescription ? 'Your answers were reviewed against the role brief you provided.' : 'Your answers were reviewed with this target role in mind.') : 'This role guided your question selection. Enable AI evaluation to receive role-specific feedback.'}</p>
+          </div>
+        </Card>
+      )}
+      {/* Score hero */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-secondary text-white p-8 mb-6 animate-fade-in">
           <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
           <p className="text-sm text-white/80 mb-1">Overall Performance</p>
@@ -107,8 +160,8 @@ export default function InterviewResults() {
 
         {evaluation.summary ? (
           <Card className="mb-6 animate-fade-in-up">
-            <h3 className="font-semibold text-gray-800 mb-2">Summary</h3>
-            <p className="text-sm text-gray-600 animate-fade-in">{evaluation.summary}</p>
+            <h3 className="font-semibold text-ink mb-2">Summary</h3>
+            <p className="text-sm text-muted animate-fade-in">{evaluation.summary}</p>
           </Card>
         ) : null}
 
@@ -116,7 +169,7 @@ export default function InterviewResults() {
           {(evaluation.strengths || []).length > 0 && (
             <Card hover className="animate-fade-in-up">
               <h3 className="font-semibold text-success mb-2">✅ Strengths</h3>
-              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+              <ul className="list-disc list-inside text-sm text-muted space-y-1">
                 {evaluation.strengths.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
@@ -126,7 +179,7 @@ export default function InterviewResults() {
           {(evaluation.weaknesses || []).length > 0 && (
             <Card hover className="animate-fade-in-up">
               <h3 className="font-semibold text-danger mb-2">⚠️ Weaknesses</h3>
-              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+              <ul className="list-disc list-inside text-sm text-muted space-y-1">
                 {evaluation.weaknesses.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
@@ -136,7 +189,7 @@ export default function InterviewResults() {
           {(evaluation.improvements || []).length > 0 && (
             <Card hover className="animate-fade-in-up">
               <h3 className="font-semibold text-warning mb-2">🔧 Improvements</h3>
-              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+              <ul className="list-disc list-inside text-sm text-muted space-y-1">
                 {evaluation.improvements.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
@@ -145,19 +198,19 @@ export default function InterviewResults() {
           )}
         </div>
 
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Question Breakdown</h2>
+        <h2 className="text-lg font-semibold text-ink mb-3">Question Breakdown</h2>
         <div className="flex flex-col gap-4">
           {questionEvaluations.map((e) => (
             <Card key={e.questionId} hover className="animate-fade-in-up">
               <div className="flex justify-between items-start mb-2">
-                <p className="font-medium text-gray-800">
+                <p className="font-medium text-ink">
                   Q{e.questionNumber}: {qTextById.get(String(e.questionId)) || 'Question'}
                 </p>
                 <Badge variant={e.score >= 8 ? 'success' : e.score >= 6 ? 'warning' : 'danger'}>
                   {e.score}/10
                 </Badge>
               </div>
-              <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+              <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-panel2">
                 <div
                   className={`h-full bg-gradient-to-r ${
                     e.score >= 8
@@ -169,12 +222,15 @@ export default function InterviewResults() {
                   style={{ width: `${e.score * 10}%` }}
                 />
               </div>
-              <p className="text-sm text-gray-600">{e.feedback}</p>
+              <p className="text-sm text-muted">{e.feedback}</p>
             </Card>
           ))}
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Button variant="secondary" onClick={handleRetry} loading={retrying} className="w-full" disabled={retryCount === 0}>
+            <Repeat2 size={16} /> Practice {retryCount} focus {retryCount === 1 ? 'question' : 'questions'}
+          </Button>
           <Button variant="outline" onClick={() => navigate('/interview/history')} className="flex-1">
             View History
           </Button>
@@ -182,7 +238,6 @@ export default function InterviewResults() {
             New Interview
           </Button>
         </div>
-      </div>
     </div>
   )
 }

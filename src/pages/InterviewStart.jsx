@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
-import Navbar from '../components/Navbar'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import Badge from '../components/Badge'
 import Loader from '../components/Loader'
+import PageHeader from '../components/PageHeader'
 
 export default function InterviewStart() {
   const { id } = useParams()
@@ -35,24 +35,18 @@ export default function InterviewStart() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface">
-        <Navbar />
-        <div className="max-w-lg mx-auto p-6 flex justify-center">
-          <Loader size="lg" />
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader size="lg" />
       </div>
     )
   }
 
   if (!interview) {
     return (
-      <div className="min-h-screen bg-surface">
-        <Navbar />
-        <div className="max-w-lg mx-auto p-6 text-center">
-          <p className="text-gray-500 mb-4">No interview found.</p>
-          <Button onClick={() => navigate('/interview/setup')}>Go to Setup</Button>
-        </div>
-      </div>
+      <Card className="mx-auto max-w-lg text-center">
+        <p className="mb-4 text-muted">No interview found.</p>
+        <Button onClick={() => navigate('/interview/setup')}>Go to Setup</Button>
+      </Card>
     )
   }
 
@@ -62,55 +56,65 @@ export default function InterviewStart() {
     navigate(`/interview/session/${id}`)
   }
 
+  const details = [
+    { label: 'Mode', badge: interview.mode, variant: 'primary' },
+    { label: 'Domain', badge: interview.domain, variant: 'secondary' },
+    { label: 'Difficulty', badge: interview.difficulty, variant: 'warning' },
+    ...(interview.targetRole ? [{ label: 'Target role', badge: interview.targetRole, variant: 'primary' }] : []),
+    { label: 'Questions', badge: interview.questions?.length ?? 0, variant: 'success' },
+  ]
+
   return (
-    <div className="min-h-screen bg-surface">
-      <Navbar />
-      <div className="max-w-lg mx-auto p-6 animate-fade-in-up">
-        <Card>
-          <h1 className="text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            You're all set
-          </h1>
-          <p className="text-sm text-gray-500 mb-6">Review your session details before starting</p>
+    <div className="animate-fade-in">
+      <PageHeader icon="🎬" title="Ready when you are" subtitle="Review your session details before starting" />
 
-          <div className="flex flex-col gap-3 mb-6">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Mode</span>
-              <Badge>{interview.mode}</Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Domain</span>
-              <Badge variant="secondary">{interview.domain}</Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Difficulty</span>
-              <Badge variant="warning">{interview.difficulty}</Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Questions</span>
-              <Badge variant="primary">{interview.questions?.length ?? 0}</Badge>
-            </div>
+      {/* Stepper */}
+      <div className="mb-6 flex items-center gap-2 text-xs font-medium">
+        {['Configure', 'Review', 'Interview', 'Results'].map((step, i) => (
+          <div key={step} className="flex items-center gap-2">
+            <span
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] ${
+                i <= 1 ? 'bg-gradient-to-br from-primary to-primary-dark text-white' : 'bg-panel2 text-muted'
+              }`}
+            >
+              {i + 1}
+            </span>
+            <span className={i <= 1 ? 'text-ink' : 'text-muted'}>{step}</span>
+            {i < 3 && <span className="mx-1 hidden h-px w-6 bg-line sm:block" />}
           </div>
-
-          <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl p-4 mb-6 text-sm text-gray-600">
-            <p className="font-medium text-gray-700 mb-1">Before you begin:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Each question is timed</li>
-              <li>Answer by typing or speaking (voice supported in Chrome/Edge)</li>
-              <li>You'll get AI-assisted feedback at the end</li>
-            </ul>
-          </div>
-
-          {isCompleted ? (
-            <Button onClick={() => navigate(`/interview/results/${id}`)} className="w-full">
-              View Results
-            </Button>
-          ) : (
-            <Button onClick={handleStart} className="w-full">
-              🚀 Start Interview
-            </Button>
-          )}
-        </Card>
+        ))}
       </div>
+
+      <Card className="animate-fade-in-up">
+        <div className="mb-6 flex flex-col gap-3">
+          {details.map((d) => (
+            <div key={d.label} className="flex items-center justify-between">
+              <span className="text-sm text-muted">{d.label}</span>
+              <Badge variant={d.variant}>{d.badge}</Badge>
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-6 rounded-xl border border-line bg-primary/5 p-4 text-sm text-muted">
+          <p className="mb-1 font-medium text-ink">{interview.targetRole ? `Focused practice for ${interview.targetRole}` : 'Before you begin:'}</p>
+          {interview.jobDescription && <p className="mb-2 line-clamp-3 text-xs leading-relaxed">Your role brief is included in your evaluation so feedback can reflect the work you are targeting.</p>}
+          <ul className="list-inside list-disc space-y-1">
+            <li>Each question is timed (90 seconds)</li>
+            <li>Answer by typing or speaking (voice: Chrome/Edge)</li>
+            <li>You'll get an evaluated score with feedback at the end</li>
+          </ul>
+        </div>
+
+        {isCompleted ? (
+          <Button onClick={() => navigate(`/interview/results/${id}`)} className="w-full" size="lg">
+            View Results
+          </Button>
+        ) : (
+          <Button onClick={handleStart} className="w-full" size="lg">
+            🚀 Start Interview
+          </Button>
+        )}
+      </Card>
     </div>
   )
 }

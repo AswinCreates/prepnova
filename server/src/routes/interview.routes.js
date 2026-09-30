@@ -7,6 +7,7 @@ import {
   completeInterview,
   interviewHistory,
   interviewResults,
+  retryWeakQuestions,
 } from '../controllers/interviewController.js'
 import { auth } from '../middleware/auth.js'
 import { asyncHandler, validate } from '../utils/validate.js'
@@ -18,6 +19,8 @@ const createSchema = z.object({
   mode: z.string().min(1, 'Mode is required'),
   domain: z.string().min(1, 'Domain is required'),
   difficulty: z.string().min(1, 'Difficulty is required'),
+  targetRole: z.string().trim().max(160).optional(),
+  jobDescription: z.string().trim().max(8000).optional(),
 })
 
 const answersSchema = z.object({
@@ -39,5 +42,6 @@ router.get('/:id', asyncHandler(getInterviewById))
 router.post('/:id/answers', validate(answersSchema), asyncHandler(saveAnswers))
 router.post('/:id/complete', asyncHandler(completeInterview))
 router.get('/:id/results', asyncHandler(interviewResults))
+router.post('/:id/retry', asyncHandler(retryWeakQuestions))
 
 export default router

@@ -31,6 +31,13 @@ export function sanitizeUser(row) {
     email: row.email,
     preferredDomain: row.preferred_domain,
     targetSkills: row.target_skills || [],
+    headline: row.headline || '',
+    experienceLevel: row.experience_level || '',
+    location: row.location || '',
+    targetRole: row.target_role || '',
+    bio: row.bio || '',
+    linkedinUrl: row.linkedin_url || '',
+    portfolioUrl: row.portfolio_url || '',
     createdAt: row.created_at,
   }
 }

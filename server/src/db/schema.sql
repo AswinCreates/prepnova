@@ -10,9 +10,24 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash   VARCHAR(255) NOT NULL,
   preferred_domain VARCHAR(100),
   target_skills   TEXT[] NOT NULL DEFAULT '{}',
+  headline        VARCHAR(160),
+  experience_level VARCHAR(30),
+  location        VARCHAR(120),
+  target_role     VARCHAR(160),
+  bio             TEXT,
+  linkedin_url    TEXT,
+  portfolio_url   TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS headline VARCHAR(160);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS experience_level VARCHAR(30);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS target_role VARCHAR(160);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS portfolio_url TEXT;
 
 CREATE TABLE IF NOT EXISTS interviews (
   id            SERIAL PRIMARY KEY,
@@ -20,12 +35,17 @@ CREATE TABLE IF NOT EXISTS interviews (
   mode          VARCHAR(20) NOT NULL CHECK (mode IN ('Technical','HR')),
   domain        VARCHAR(100) NOT NULL,
   difficulty    VARCHAR(20) NOT NULL CHECK (difficulty IN ('Easy','Medium','Hard')),
+  target_role   VARCHAR(160),
+  job_description TEXT,
   status        VARCHAR(20) NOT NULL DEFAULT 'in_progress'
                 CHECK (status IN ('in_progress','completed','cancelled')),
   total_score   INTEGER,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at  TIMESTAMPTZ
 );
+
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS target_role VARCHAR(160);
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS job_description TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_interviews_user ON interviews(user_id);
 

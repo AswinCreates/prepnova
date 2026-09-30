@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Card from '../components/Card'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import { ThemeCycleButton } from '../components/ThemeToggle'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -35,12 +36,16 @@ export default function Signup() {
       <div className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl animate-float" aria-hidden="true" />
       <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-success/10 blur-3xl animate-float" aria-hidden="true" />
 
+      <div className="absolute right-4 top-4">
+        <ThemeCycleButton />
+      </div>
+
       <div className="relative flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-sm animate-fade-in-up border-primary/20">
-          <h1 className="text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-1 text-primary">
             Create your account
           </h1>
-          <p className="text-sm text-gray-500 mb-6">Start practicing for your next interview</p>
+          <p className="text-sm text-muted mb-6">Start practicing for your next interview</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input
@@ -72,7 +77,7 @@ export default function Signup() {
             </Button>
           </form>
 
-          <p className="text-sm text-gray-500 mt-4 text-center">
+          <p className="text-sm text-muted mt-4 text-center">
             Already have an account?{' '}
             <Link to="/login" className="text-primary font-medium hover:underline">
               Log in

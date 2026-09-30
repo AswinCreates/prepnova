@@ -154,7 +154,7 @@ export default function SpeechInterview({ question, onAnswerSubmitted }) {
   }
 if (!supported) {
     return (
-      <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm text-gray-700 animate-fade-in-up">
+      <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm text-ink animate-fade-in-up">
         Your browser doesn’t support the Web Speech API. Switch to{" "}
         <span className="font-semibold">Typed</span> mode or use Chrome/Edge for voice interviews.
       </div>
@@ -165,21 +165,21 @@ if (!supported) {
     isListening ? 'Listening…' : isSpeaking ? 'Speaking…' : 'Tap the mic to start'
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white/70 backdrop-blur p-5 flex flex-col gap-4 animate-fade-in-up">
+    <div className="rounded-2xl border border-line bg-panel/70 backdrop-blur p-5 flex flex-col gap-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-600">Spoken answer</span>
+        <span className="text-sm font-medium text-muted">Spoken answer</span>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
             isListening
               ? 'bg-danger/10 text-danger'
               : isSpeaking
               ? 'bg-primary/10 text-primary'
-              : 'bg-gray-100 text-gray-500'
+              : 'bg-panel2 text-muted'
           }`}
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              isListening ? 'bg-danger animate-ping' : isSpeaking ? 'bg-primary' : 'bg-gray-400'
+              isListening ? 'bg-danger animate-ping' : isSpeaking ? 'bg-primary' : 'bg-muted'
             }`}
           />
           {status}
@@ -226,8 +226,8 @@ if (!supported) {
       )}
 
       {/* Live transcript */}
-      <div className="min-h-[76px] rounded-xl border border-gray-200 bg-white p-3 text-sm whitespace-pre-wrap shadow-inner">
-        {transcript || <span className="text-gray-400">Your spoken answer will appear here…</span>}
+      <div className="min-h-[76px] rounded-xl border border-line bg-panel p-3 text-sm text-ink whitespace-pre-wrap shadow-inner">
+        {transcript || <span className="text-muted">Your spoken answer will appear here…</span>}
         {isListening && (
           <span className="ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 animate-pulse bg-primary align-middle" />
         )}

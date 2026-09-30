@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import Card from '../components/Card'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import { ThemeCycleButton } from '../components/ThemeToggle'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -43,12 +44,16 @@ export default function Login() {
         aria-hidden="true"
       />
 
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeCycleButton />
+      </div>
+
       <div className="relative flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-sm animate-fade-in-up border-primary/20">
-          <h1 className="text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-1 text-primary">
             Welcome back
           </h1>
-          <p className="text-sm text-gray-500 mb-6">Log in to continue your interview prep</p>
+          <p className="text-sm text-muted mb-6">Log in to continue your interview prep</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input
@@ -72,7 +77,7 @@ export default function Login() {
             </Button>
           </form>
 
-          <p className="text-sm text-gray-500 mt-4 text-center">
+          <p className="text-sm text-muted mt-4 text-center">
             Don't have an account?{' '}
             <Link to="/signup" className="text-primary font-medium hover:underline">
               Sign up

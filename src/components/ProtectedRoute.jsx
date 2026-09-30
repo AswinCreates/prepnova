@@ -8,7 +8,7 @@ export default function ProtectedRoute({ children }) {
   // Wait for session validation before deciding where to go.
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="min-h-screen bg-app flex items-center justify-center">
         <Loader size="lg" />
       </div>
     )

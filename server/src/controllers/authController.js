@@ -15,7 +15,9 @@ export async function register(req, res) {
   } = await pool.query(
     `INSERT INTO users (name, email, password_hash)
      VALUES ($1, $2, $3)
-     RETURNING id, name, email, preferred_domain, target_skills, created_at`,
+     RETURNING id, name, email, preferred_domain, target_skills,
+               headline, experience_level, location, target_role, bio,
+               linkedin_url, portfolio_url, created_at`,
     [name, email, passwordHash]
   )
 
@@ -40,7 +42,9 @@ export async function me(req, res) {
   const {
     rows: [row],
   } = await pool.query(
-    `SELECT id, name, email, preferred_domain, target_skills, created_at
+    `SELECT id, name, email, preferred_domain, target_skills,
+            headline, experience_level, location, target_role, bio,
+            linkedin_url, portfolio_url, created_at
      FROM users WHERE id = $1`,
     [req.userId]
   )

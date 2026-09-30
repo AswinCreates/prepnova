@@ -19,10 +19,10 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-surface flex items-center justify-center p-6">
-          <Card className="text-center max-w-sm">
-            <h1 className="text-xl font-bold text-gray-800 mb-2">Something went wrong</h1>
-            <p className="text-sm text-gray-500 mb-4">
+        <div className="flex min-h-screen items-center justify-center bg-app p-6">
+          <Card className="max-w-sm text-center">
+            <h1 className="mb-2 text-xl font-bold text-ink">Something went wrong</h1>
+            <p className="mb-4 text-sm text-muted">
               An unexpected error occurred. Try refreshing the page.
             </p>
             <Button onClick={() => window.location.reload()}>Refresh</Button>

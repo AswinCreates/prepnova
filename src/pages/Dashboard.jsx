@@ -1,15 +1,37 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import Navbar from '../components/Navbar'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import Badge from '../components/Badge'
 import Loader from '../components/Loader'
+import PageHeader from '../components/PageHeader'
+import { useAuth } from '../context/AuthContext'
+import { ArrowRight, Award, Compass, Hand, Plus, Target, TrendingUp } from 'lucide-react'
+
+function ProgressTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const point = payload[0].payload
+  const date = new Date(point.date)
+  if (Number.isNaN(date.getTime())) return null
+
+  const dateLabel = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date)
+  const timeLabel = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date)
+
+  return (
+    <div className="rounded-xl border border-line bg-panel px-3.5 py-3 shadow-lg">
+      <p className="text-xs font-semibold text-ink">{dateLabel}</p>
+      <p className="mt-0.5 text-xs text-muted">{timeLabel}</p>
+      <p className="mt-2 text-xs font-medium text-primary">Score: {point.score}%</p>
+      <p className="mt-0.5 text-[11px] text-muted">{point.domain} · {point.difficulty}</p>
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [recent, setRecent] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +42,7 @@ export default function Dashboard() {
       .then(([statsRes, historyRes]) => {
         if (!active) return
         setStats(statsRes.data)
-        setRecent((historyRes.data.sessions || []).slice(0, 3))
+        setRecent((historyRes.data.sessions || []).slice(0, 4))
       })
       .catch((err) => {
         console.error('Dashboard load failed', err)
@@ -35,11 +57,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface">
-        <Navbar />
-        <div className="max-w-2xl mx-auto p-6 flex justify-center">
-          <Loader size="lg" />
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader size="lg" />
       </div>
     )
   }
@@ -47,106 +66,163 @@ export default function Dashboard() {
   const totalSessions = stats?.stats?.totalSessions ?? 0
   const avgScore = stats?.stats?.avgScore ?? 0
   const bestScore = stats?.stats?.bestScore ?? 0
+  const domains = stats?.domainDistribution || []
   const timeline = (stats?.timeline || []).map((t, i) => ({
     name: `#${i + 1}`,
     score: t.score,
+    date: t.date,
+    domain: t.domain,
+    difficulty: t.difficulty,
   }))
 
   const statCards = [
-    { label: 'Sessions', value: totalSessions, icon: '🎯', grad: 'from-primary to-indigo-400' },
-    { label: 'Avg Score', value: `${avgScore}%`, icon: '📈', grad: 'from-secondary to-emerald-400' },
-    { label: 'Best Score', value: `${bestScore}%`, icon: '🏆', grad: 'from-amber-400 to-warning' },
+    { label: 'Sessions', value: totalSessions, icon: <Target className="text-primary" /> },
+    { label: 'Average', value: `${avgScore}%`, icon: <TrendingUp className="text-secondary" /> },
+    { label: 'Best Score', value: `${bestScore}%`, icon: <Award className="text-warning" /> },
+    { label: 'Domains', value: domains.length, icon: <Compass className="text-primary" /> },
   ]
 
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  })
+
   return (
-    <div className="min-h-screen bg-surface">
-      <Navbar />
-      <div className="max-w-2xl mx-auto p-6 animate-fade-in-up">
-        {/* Hero card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-secondary text-white p-6">
-          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
-          <div className="absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
-          <h2 className="text-2xl font-bold mb-1">Ready to practice?</h2>
-          <p className="text-sm text-white/80 mb-4">Start a new mock interview session and sharpen your skills</p>
+    <div className="animate-fade-in">
+      <PageHeader
+        icon={<Hand size={20} />}
+        title={`Welcome back, ${user?.name?.split(' ')[0] || 'there'}`}
+        subtitle={today}
+        actions={<Button onClick={() => navigate('/interview/setup')}><Plus size={16} /> New Interview</Button>}
+      />
+
+      {/* Hero CTA */}
+      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-secondary p-6 text-white animate-fade-in-up">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
+        <div className="absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold">Ready to practice?</h2>
+            <p className="text-sm text-white/80">Start a mock interview — type or speak your answers.</p>
+          </div>
           <Button
             onClick={() => navigate('/interview/setup')}
-            className="bg-white text-primary-dark hover:bg-gray-100"
+            className="!bg-white !text-[#115953] shadow-lg shadow-black/10 hover:!bg-[#f1f5f1]"
           >
-            🚀 New Interview
+            <><ArrowRight size={16} /> Start now</>
           </Button>
         </div>
+      </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {statCards.map((c) => (
-            <div
-              key={c.label}
-              className="rounded-2xl bg-gradient-to-br from-white to-white/90 border border-gray-100 p-5 animate-fade-in-up"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-gray-800">{c.value}</span>
-                <span className="text-2xl" aria-hidden="true">{c.icon}</span>
-              </div>
-              <div className={`h-1.5 w-full bg-gradient-to-r ${c.grad} rounded-full opacity-40`} />
-              <p className="mt-2 text-sm text-gray-500">{c.label}</p>
+      {/* Stats */}
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {statCards.map((c) => (
+          <Card key={c.label} hover className="animate-fade-in-up">
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-ink">{c.value}</span>
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-panel2">{c.icon}</span>
             </div>
-          ))}
-        </div>
+            <div className="mt-3 h-1.5 w-full rounded-full bg-primary/30" />
+            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted">{c.label}</p>
+          </Card>
+        ))}
+      </div>
 
-        {timeline.length > 0 && (
-          <Card className="mb-6 animate-fade-in-up">
-            <h3 className="font-semibold text-gray-800 mb-4">Progress Over Time</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={timeline}>
-                <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
-                <YAxis stroke="#9CA3AF" fontSize={12} domain={[0, 100]} />
-                <Tooltip />
+      {/* Chart + domain coverage */}
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2 animate-fade-in-up">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-semibold text-ink">Progress Over Time</h3>
+            <Badge variant="primary">last {timeline.length}</Badge>
+          </div>
+          {timeline.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted">
+              Complete an interview to see your score trend.
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={timeline} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--pn-border)" vertical={false} />
+                <XAxis dataKey="name" stroke="var(--pn-muted)" fontSize={12} tickLine={false} />
+                <YAxis stroke="var(--pn-muted)" fontSize={12} domain={[0, 100]} tickLine={false} />
+                <Tooltip content={<ProgressTooltip />} cursor={{ stroke: 'var(--pn-border)', strokeDasharray: '4 4' }} />
                 <Line
                   type="monotone"
                   dataKey="score"
-                  stroke="#4F46E5"
+                  stroke="#176F68"
                   strokeWidth={2.5}
-                  dot={{ r: 4, fill: '#4F46E5' }}
+                  dot={{ r: 4, fill: '#176F68' }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          </Card>
-        )}
+          )}
+        </Card>
 
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold text-gray-800">Recent Sessions</h3>
-          <Button variant="outline" onClick={() => navigate('/interview/history')}>
-            View All
-          </Button>
-        </div>
-
-        {recent.length === 0 ? (
-          <Card className="text-center text-gray-500 animate-fade-in-up">
-            No interviews completed yet. Start your first one!
-          </Card>
-        ) : (
-          recent.map((s) => (
-            <Card
-              key={s.id}
-              hover
-              className="flex justify-between items-center mb-3 cursor-pointer animate-fade-in-up"
-              onClick={() => navigate(`/interview/results/${s.id}`)}
-            >
-              <div className="flex gap-2">
-                <Badge>{s.mode}</Badge>
-                <Badge variant="secondary">{s.domain}</Badge>
-                <Badge variant="warning">{s.difficulty}</Badge>
-              </div>
-              <Badge
-                variant={s.total_score >= 80 ? 'success' : s.total_score >= 50 ? 'warning' : 'danger'}
-              >
-                {s.total_score}%
-              </Badge>
-            </Card>
-          ))
-        )}
+        <Card className="animate-fade-in-up">
+          <h3 className="mb-4 font-semibold text-ink">Domain Coverage</h3>
+          {domains.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted">No domains practiced yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {domains.map((d) => (
+                <li key={d.domain}>
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="truncate font-medium text-ink">{d.domain}</span>
+                    <span className="text-muted">{d.count}</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-panel2">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+                      style={{ width: `${Math.min(100, d.count * 25)}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
+
+      {/* Recent sessions */}
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold text-ink">Recent Sessions</h3>
+        <Button variant="ghost" onClick={() => navigate('/interview/history')}>
+          View all →
+        </Button>
+      </div>
+
+      {recent.length === 0 ? (
+        <Card className="text-center animate-fade-in-up">
+          <p className="flex justify-center text-muted"><Target size={28} /></p>
+          <p className="mt-2 text-sm text-muted">No interviews completed yet. Start your first one!</p>
+          <Button className="mt-4" onClick={() => navigate('/interview/setup')}>
+            Start Interview
+          </Button>
+        </Card>
+      ) : (
+        recent.map((s) => (
+          <Card
+            key={s.id}
+            hover
+            className="mb-3 flex cursor-pointer items-center justify-between animate-fade-in-up"
+            onClick={() => navigate(`/interview/results/${s.id}`)}
+          >
+            <div className="flex flex-wrap gap-2">
+              <Badge>{s.mode}</Badge>
+              <Badge variant="secondary">{s.domain}</Badge>
+              <Badge variant="warning">{s.difficulty}</Badge>
+              {s.target_role && <Badge variant="primary">{s.target_role}</Badge>}
+            </div>
+            <Badge
+              variant={s.total_score >= 80 ? 'success' : s.total_score >= 50 ? 'warning' : 'danger'}
+            >
+              {s.total_score}%
+            </Badge>
+          </Card>
+        ))
+      )}
     </div>
   )
 }

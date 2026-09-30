@@ -3,7 +3,9 @@
 PrepNova is a full-stack mock interview platform for an academic BCA 5th-semester minor
 project. Candidates configure a mock interview (mode, domain, difficulty), answer timed
 questions by **typing or speaking** (Web Speech API), and receive AI-assisted evaluation
-with a score, summary, strengths/weaknesses, and per-question feedback.
+with a score, summary, strengths/weaknesses, and per-question feedback. Practice can be
+focused around an optional target role and job description, and candidates can retry their
+lowest-scoring questions as a dedicated session.
 
 ## Tech Stack
 
@@ -64,6 +66,9 @@ npm run db:seed           # load the question bank + demo user
 npm run dev               # starts http://localhost:5000
 ```
 
+Run `npm run db:migrate` again when updating an existing database; it adds the optional
+interview targeting and profile detail fields.
+
 - `npm run db:reset` drops and recreates tables (local dev only).
 - The seed adds a **demo user** `demo@prepnova.com` / `Demo123!`.
 
@@ -121,6 +126,7 @@ GET    /api/users/profile            # user profile (JWT)
 PUT    /api/users/profile            # update name / preferred_domain / target_skills
 GET    /api/questions/pool           # question bank, filters: mode, domain, difficulty
 POST   /api/interviews               # create interview → interviewId + question set
+POST   /api/interviews/:id/retry     # create a focused retry from the lowest-scoring questions
 GET    /api/interviews/history       # completed interviews (JWT)
 GET    /api/interviews/:id           # interview + questions + answers (JWT)
 POST   /api/interviews/:id/answers   # save typed/voice answers

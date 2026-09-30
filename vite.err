@@ -1,0 +1,270 @@
+[2m6:07:41 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/Dashboard.jsx:163:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m163 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/Dashboard.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:07:41 pm[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/Dashboard.jsx:163:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m163 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/Dashboard.jsx[39m
+[2m6:07:41 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/Dashboard.jsx:163:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m163 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/Dashboard.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:07:42 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/Dashboard.jsx:163:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m163 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/Dashboard.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:10:00 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewSession.jsx:199:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m199 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewSession.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:10:01 pm[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewSession.jsx:199:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m199 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewSession.jsx[39m
+[2m6:10:01 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewSession.jsx:199:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m199 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewSession.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:10:02 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewSession.jsx:199:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m199 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewSession.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:10:03 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewSession.jsx:199:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m199 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewSession.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:10:04 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewSession.jsx:199:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m199 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewSession.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:12:46 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewResults.jsx:183:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m183 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewResults.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:12:47 pm[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewResults.jsx:183:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m183 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewResults.jsx[39m
+[2m6:12:47 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewResults.jsx:183:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m183 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewResults.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:12:48 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewResults.jsx:183:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m183 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewResults.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m6:12:53 pm[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mAdjacent JSX elements must be wrapped in an enclosing tag.
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/pages/InterviewResults.jsx:183:5 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m183 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m<[38;5;249m/[0m[38;5;249md[0m[38;5;249mi[0m[38;5;249mv[0m[38;5;249m>[0m
+ [38;5;240m    │[0m     ┬  
+ [38;5;240m    │[0m     ╰── 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Did you want a JSX fragment `<>...</>`?
+[38;5;246m─────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/src/pages/InterviewResults.jsx[39m
+      at transformWithOxc (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/HP/OneDrive/Desktop/Projects/PrepNova/prepnova/node_modules/vite/dist/node/chunks/node.js:25142:20)
