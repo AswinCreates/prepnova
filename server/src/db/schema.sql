@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash   VARCHAR(255) NOT NULL,
   preferred_domain VARCHAR(100),
   target_skills   TEXT[] NOT NULL DEFAULT '{}',
+  role            VARCHAR(20) NOT NULL DEFAULT 'user',
+  login_count     INTEGER NOT NULL DEFAULT 0,
+  last_login_at   TIMESTAMPTZ,
   headline        VARCHAR(160),
   experience_level VARCHAR(30),
   location        VARCHAR(120),
@@ -28,6 +31,52 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS target_role VARCHAR(160);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS portfolio_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'users_role_check' AND conrelid = 'users'::regclass
+  ) THEN
+    ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'admin'));
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS login_events (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  logged_in_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_events_logged_in_at ON login_events(logged_in_at);
+CREATE INDEX IF NOT EXISTS idx_login_events_user ON login_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
+
+-- Registration signs users in immediately, so count that initial session for
+-- accounts created before registration began recording login events.
+INSERT INTO login_events (user_id, logged_in_at)
+SELECT users.id, users.created_at
+FROM users
+WHERE users.role = 'user'
+  AND users.login_count = 0
+  AND users.last_login_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM login_events WHERE login_events.user_id = users.id
+  );
+
+UPDATE users
+SET login_count = 1, last_login_at = created_at
+WHERE role = 'user'
+  AND login_count = 0
+  AND last_login_at IS NULL
+  AND EXISTS (
+    SELECT 1 FROM login_events
+    WHERE login_events.user_id = users.id
+      AND login_events.logged_in_at = users.created_at
+  );
 
 CREATE TABLE IF NOT EXISTS interviews (
   id            SERIAL PRIMARY KEY,

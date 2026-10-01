@@ -63,11 +63,18 @@ npm install
 cp .env.example .env     # edit credentials/keys as needed
 npm run db:migrate        # apply schema
 npm run db:seed           # load the question bank + demo user
+npm run db:admin          # create/promote the initial admin account
 npm run dev               # starts http://localhost:5000
 ```
 
-Run `npm run db:migrate` again when updating an existing database; it adds the optional
-interview targeting and profile detail fields.
+Run `npm run db:migrate` again when updating an existing database; it applies new schema
+fields and tables, including role-based access and login activity tracking.
+
+The initial admin signs in through the regular login page with `aswin@admin.prepnova`.
+Its initial password is `aswinadm123`. Set `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`,
+and `INITIAL_ADMIN_PASSWORD` in `server/.env` to configure these values before running
+`npm run db:admin`. Admins can visit **Admin console** to view account/login analytics
+and create additional admin accounts. Public signup always creates a standard user.
 
 - `npm run db:reset` drops and recreates tables (local dev only).
 - The seed adds a **demo user** `demo@prepnova.com` / `Demo123!`.
@@ -114,6 +121,7 @@ AI_TIMEOUT_MS=30000
 | `npm run dev` / `npm start` | server | REST API (port 5000) |
 | `npm run db:migrate` | server | Apply schema |
 | `npm run db:seed` | server | Seed questions + demo user |
+| `npm run db:admin` | server | Create/promote the initial admin account |
 | `npm run db:reset` | server | Drop + reapply schema |
 
 ## REST API (summary)

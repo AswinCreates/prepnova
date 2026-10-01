@@ -3,7 +3,8 @@ import { sanitizeUser } from '../middleware/auth.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 const USER_COLUMNS = `id, name, email, preferred_domain, target_skills, headline,
-  experience_level, location, target_role, bio, linkedin_url, portfolio_url, created_at`
+  experience_level, location, target_role, bio, linkedin_url, portfolio_url,
+  role, login_count, last_login_at, created_at`
 
 export async function getProfile(req, res) {
   const {

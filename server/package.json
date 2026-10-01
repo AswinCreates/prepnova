@@ -10,7 +10,8 @@
     "start": "node src/server.js",
     "db:migrate": "node src/db/migrate.js",
     "db:seed": "node src/db/seed.js",
-    "db:reset": "node src/db/reset.js"
+    "db:reset": "node src/db/reset.js",
+    "db:admin": "node src/db/seedAdmin.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

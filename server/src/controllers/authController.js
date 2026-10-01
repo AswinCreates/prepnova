@@ -5,23 +5,30 @@ import { ApiError } from '../middleware/errorHandler.js'
 
 export async function register(req, res) {
   const { name, email, password } = req.body
-
-  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email])
-  if (existing.rowCount > 0) throw new ApiError(409, 'An account with this email already exists')
-
   const passwordHash = await bcrypt.hash(password, 10)
-  const {
-    rows: [row],
-  } = await pool.query(
-    `INSERT INTO users (name, email, password_hash)
-     VALUES ($1, $2, $3)
-     RETURNING id, name, email, preferred_domain, target_skills,
-               headline, experience_level, location, target_role, bio,
-               linkedin_url, portfolio_url, created_at`,
-    [name, email, passwordHash]
-  )
-
-  res.status(201).json({ token: signToken(row.id), user: sanitizeUser(row) })
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const {
+      rows: [row],
+    } = await client.query(
+      `INSERT INTO users (name, email, password_hash, role, login_count, last_login_at)
+       VALUES ($1, $2, $3, 'user', 1, now())
+       RETURNING id, name, email, preferred_domain, target_skills,
+                 headline, experience_level, location, target_role, bio,
+                 linkedin_url, portfolio_url, role, login_count, last_login_at, created_at`,
+      [name, email, passwordHash]
+    )
+    await client.query('INSERT INTO login_events (user_id) VALUES ($1)', [row.id])
+    await client.query('COMMIT')
+    res.status(201).json({ token: signToken(row.id), user: sanitizeUser(row) })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    if (err.code === '23505') throw new ApiError(409, 'An account with this email already exists')
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 export async function login(req, res) {
@@ -35,7 +42,29 @@ export async function login(req, res) {
   const valid = await bcrypt.compare(password, row.password_hash)
   if (!valid) throw new ApiError(401, 'Invalid email or password')
 
-  res.json({ token: signToken(row.id), user: sanitizeUser(row) })
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const {
+      rows: [loggedInUser],
+    } = await client.query(
+      `UPDATE users
+       SET login_count = login_count + 1, last_login_at = now()
+       WHERE id = $1
+       RETURNING id, name, email, preferred_domain, target_skills, headline,
+                 experience_level, location, target_role, bio, linkedin_url,
+                 portfolio_url, role, login_count, last_login_at, created_at`,
+      [row.id]
+    )
+    await client.query('INSERT INTO login_events (user_id) VALUES ($1)', [row.id])
+    await client.query('COMMIT')
+    res.json({ token: signToken(loggedInUser.id), user: sanitizeUser(loggedInUser) })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 export async function me(req, res) {
@@ -44,7 +73,7 @@ export async function me(req, res) {
   } = await pool.query(
     `SELECT id, name, email, preferred_domain, target_skills,
             headline, experience_level, location, target_role, bio,
-            linkedin_url, portfolio_url, created_at
+            linkedin_url, portfolio_url, role, login_count, last_login_at, created_at
      FROM users WHERE id = $1`,
     [req.userId]
   )

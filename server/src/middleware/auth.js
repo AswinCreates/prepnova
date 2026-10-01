@@ -29,6 +29,7 @@ export function sanitizeUser(row) {
     id: row.id,
     name: row.name,
     email: row.email,
+    role: row.role || 'user',
     preferredDomain: row.preferred_domain,
     targetSkills: row.target_skills || [],
     headline: row.headline || '',
@@ -38,6 +39,8 @@ export function sanitizeUser(row) {
     bio: row.bio || '',
     linkedinUrl: row.linkedin_url || '',
     portfolioUrl: row.portfolio_url || '',
+    loginCount: Number(row.login_count || 0),
+    lastLoginAt: row.last_login_at || null,
     createdAt: row.created_at,
   }
 }

@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle, { ThemeCycleButton } from './ThemeToggle'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 
 /* --- nav icons --- */
 const iconProps = {
@@ -121,7 +121,7 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
         {/* Nav */}
         <nav className={`flex-1 space-y-1 px-3 py-2 ${collapsed ? 'lg:px-2' : ''}`}>
           <p className={`px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted ${collapsed ? 'lg:hidden' : ''}`}>Menu</p>
-          {NAV_ITEMS.map(({ to, label, Icon, end }) => (
+          {[...NAV_ITEMS, ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Admin console', Icon: ShieldCheck }] : [])].map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}

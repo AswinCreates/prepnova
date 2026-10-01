@@ -2,8 +2,8 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Loader from './Loader'
 
-export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
+export default function ProtectedRoute({ children, requireAdmin = false }) {
+  const { isAuthenticated, loading, user } = useAuth()
 
   // Wait for session validation before deciding where to go.
   if (loading) {
@@ -16,6 +16,10 @@ export default function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (requireAdmin && user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />
   }
 
   return children
