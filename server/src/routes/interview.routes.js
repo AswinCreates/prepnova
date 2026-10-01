@@ -19,6 +19,7 @@ const createSchema = z.object({
   mode: z.string().min(1, 'Mode is required'),
   domain: z.string().min(1, 'Domain is required'),
   difficulty: z.string().min(1, 'Difficulty is required'),
+  questionCount: z.number().int().min(5).max(20).default(5),
   targetRole: z.string().trim().max(160).optional(),
   jobDescription: z.string().trim().max(8000).optional(),
 })

@@ -109,6 +109,36 @@ CREATE TABLE IF NOT EXISTS questions (
   category      VARCHAR(80)
 );
 
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_compulsory BOOLEAN NOT NULL DEFAULT false;
+
+-- These three behavioral prompts are part of every interview, regardless of
+-- the selected mode or domain. Upsert them so existing question banks migrate safely.
+INSERT INTO questions (mode, domain, difficulty, question_text, category, is_compulsory)
+VALUES
+  ('Both', 'General', 'Easy', 'Tell me about yourself.', 'Core behavioral', true),
+  ('Both', 'General', 'Medium', 'What are your greatest strengths, and how have you used them?', 'Core behavioral', true),
+  ('Both', 'General', 'Medium', 'What is one weakness you are working to improve, and what steps are you taking to overcome it?', 'Core behavioral', true),
+  ('HR', 'HR / Behavioral', 'Medium', 'Why should we hire you for this role?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Easy', 'What motivates you in your work?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'Tell me about a mistake you made and what you learned from it.', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'Describe a time you handled pressure at work or school.', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'Tell me about a time you received critical feedback and applied it.', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'How do you prioritize when you have multiple deadlines?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Easy', 'What kind of work environment helps you do your best work?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'Tell me about a time you took initiative on a project.', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'How do you handle disagreements with a teammate?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Easy', 'What professional accomplishment are you most proud of?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'How do you adapt when priorities change unexpectedly?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Easy', 'What are you looking for in your next role?', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'Describe working with someone whose style differed from yours.', 'Behavioral', false),
+  ('HR', 'HR / Behavioral', 'Medium', 'How do you build trust with new teammates?', 'Behavioral', false)
+ON CONFLICT (question_text) DO UPDATE
+SET mode = EXCLUDED.mode,
+    domain = EXCLUDED.domain,
+    difficulty = EXCLUDED.difficulty,
+    category = EXCLUDED.category,
+    is_compulsory = EXCLUDED.is_compulsory;
+
 CREATE TABLE IF NOT EXISTS answers (
   id                 SERIAL PRIMARY KEY,
   interview_id       INTEGER NOT NULL REFERENCES interviews(id) ON DELETE CASCADE,

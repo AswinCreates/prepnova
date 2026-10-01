@@ -7,6 +7,7 @@ import Button from '../components/Button'
 import Badge from '../components/Badge'
 import Loader from '../components/Loader'
 import PageHeader from '../components/PageHeader'
+import { formatTimeLimit, getQuestionTimeLimit } from '../utils/interviewTiming'
 
 export default function InterviewStart() {
   const { id } = useParams()
@@ -99,7 +100,7 @@ export default function InterviewStart() {
           <p className="mb-1 font-medium text-ink">{interview.targetRole ? `Focused practice for ${interview.targetRole}` : 'Before you begin:'}</p>
           {interview.jobDescription && <p className="mb-2 line-clamp-3 text-xs leading-relaxed">Your role brief is included in your evaluation so feedback can reflect the work you are targeting.</p>}
           <ul className="list-inside list-disc space-y-1">
-            <li>Each question is timed (90 seconds)</li>
+            <li>Each question is timed ({formatTimeLimit(getQuestionTimeLimit(interview.difficulty))} for {interview.difficulty.toLowerCase()} difficulty)</li>
             <li>Answer by typing or speaking (voice: Chrome/Edge)</li>
             <li>You'll get an evaluated score with feedback at the end</li>
           </ul>

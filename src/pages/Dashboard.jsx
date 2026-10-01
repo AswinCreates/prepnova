@@ -98,7 +98,7 @@ export default function Dashboard() {
       />
 
       {/* Hero CTA */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-secondary p-6 text-white animate-fade-in-up">
+      <div className="relative mb-6 overflow-hidden rounded-2xl bg-linear-to-br from-primary via-indigo-500 to-secondary p-6 text-white animate-fade-in-up">
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
         <div className="absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
         <div className="relative flex flex-wrap items-center justify-between gap-4">
@@ -108,7 +108,7 @@ export default function Dashboard() {
           </div>
           <Button
             onClick={() => navigate('/interview/setup')}
-            className="!bg-white !text-[#115953] shadow-lg shadow-black/10 hover:!bg-[#f1f5f1]"
+            className="!bg-white !text-[#115953] shadow-lg shadow-black/10 hover:bg-[#f1f5f1]"
           >
             <><ArrowRight size={16} /> Start now</>
           </Button>

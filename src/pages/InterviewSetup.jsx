@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
@@ -21,8 +21,20 @@ export default function InterviewSetup() {
   const [mode, setMode] = useState('')
   const [targetRole, setTargetRole] = useState('')
   const [jobDescription, setJobDescription] = useState('')
+  const [questionCount, setQuestionCount] = useState(5)
+  const [compulsoryCount, setCompulsoryCount] = useState(3)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    api.get('/questions/pool')
+      .then(({ data }) => {
+        const count = Number(data.compulsoryCount || 0)
+        setCompulsoryCount(count)
+        setQuestionCount((current) => Math.max(current, count, 5))
+      })
+      .catch(() => toast.error('Could not load the required interview questions'))
+  }, [])
 
   const canContinue = domain && difficulty && mode
 
@@ -35,6 +47,7 @@ export default function InterviewSetup() {
         difficulty,
         targetRole: targetRole.trim(),
         jobDescription: jobDescription.trim(),
+        questionCount,
       })
       navigate(`/interview/start/${data.interviewId}`)
     } catch (err) {
@@ -49,7 +62,7 @@ export default function InterviewSetup() {
       <PageHeader
         icon="🧩"
         title="Set up your mock interview"
-        subtitle="Choose a mode, domain, and difficulty to begin"
+        subtitle="Choose a mode, domain, difficulty, and how many questions to answer"
       />
 
       <Card className="animate-fade-in-up">
@@ -144,6 +157,28 @@ export default function InterviewSetup() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="mb-8">
+          <label htmlFor="question-count" className="mb-2 block text-sm font-semibold text-ink">Number of questions</label>
+          <select
+            id="question-count"
+            value={questionCount}
+            onChange={(event) => setQuestionCount(Number(event.target.value))}
+            className="w-full rounded-xl border border-line bg-panel px-3 py-3 text-sm text-ink outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 sm:max-w-xs"
+          >
+            <option value={5} disabled={compulsoryCount > 5}>5 questions</option>
+            <optgroup label="6–10 questions">
+              {[6, 7, 8, 9, 10].map((count) => <option key={count} value={count} disabled={count < compulsoryCount}>{count} questions</option>)}
+            </optgroup>
+            <optgroup label="11–15 questions">
+              {[11, 12, 13, 14, 15].map((count) => <option key={count} value={count} disabled={count < compulsoryCount}>{count} questions</option>)}
+            </optgroup>
+            <optgroup label="16–20 questions">
+              {[16, 17, 18, 19, 20].map((count) => <option key={count} value={count} disabled={count < compulsoryCount}>{count} questions</option>)}
+            </optgroup>
+          </select>
+          <p className="mt-2 text-xs text-muted">Includes {compulsoryCount} required questions asked in every interview.</p>
         </div>
 
         <Button disabled={!canContinue} onClick={handleContinue} loading={loading} className="w-full" size="lg">

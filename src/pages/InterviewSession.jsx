@@ -8,9 +8,8 @@ import Badge from '../components/Badge'
 import Loader from '../components/Loader'
 import SpeechInterview from '../components/SpeechInterview'
 import { useTimer } from '../hooks/useTimer'
+import { getQuestionTimeLimit } from '../utils/interviewTiming'
 import { ClipboardCheck, MessageSquareText, Sparkles } from 'lucide-react'
-
-const SECONDS_PER_QUESTION = 90
 
 export default function InterviewSession() {
   const { id } = useParams()
@@ -23,11 +22,12 @@ export default function InterviewSession() {
   const [answerMode, setAnswerMode] = useState('typed')
   const [answers, setAnswers] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const [secondsPerQuestion, setSecondsPerQuestion] = useState(getQuestionTimeLimit('Medium'))
 
   const current = questions[currentIndex]
   const isLastQuestion = currentIndex === questions.length - 1
 
-  const { secondsLeft, formatted, reset } = useTimer(SECONDS_PER_QUESTION, () => handleNext())
+  const { secondsLeft, formatted, reset } = useTimer(secondsPerQuestion, () => handleNext())
 
   useEffect(() => {
     let active = true
@@ -36,6 +36,9 @@ export default function InterviewSession() {
       .then((res) => {
         if (!active) return
         const iv = res.data.interview
+        const questionTimeLimit = getQuestionTimeLimit(iv.difficulty)
+        setSecondsPerQuestion(questionTimeLimit)
+        reset(questionTimeLimit)
         setQuestions(iv.questions || [])
         if (iv.status === 'completed') {
           navigate(`/interview/results/${id}`, { replace: true })
@@ -77,7 +80,7 @@ export default function InterviewSession() {
       questionId: current.id,
       answerText: answer,
       answerMode,
-      timeTakenSeconds: Math.max(0, SECONDS_PER_QUESTION - secondsLeft),
+      timeTakenSeconds: Math.max(0, secondsPerQuestion - secondsLeft),
     }
     const updatedAnswers = [...answers, entry]
     setAnswers(updatedAnswers)
@@ -89,7 +92,7 @@ export default function InterviewSession() {
     setCurrentIndex((i) => i + 1)
     setAnswer('')
     setAnswerMode('typed')
-    reset(SECONDS_PER_QUESTION)
+    reset(secondsPerQuestion)
   }
 
   const handleVoiceAnswer = (text) => {
@@ -136,7 +139,7 @@ export default function InterviewSession() {
     )
   }
 
-  const progressPct = Math.round((secondsLeft / SECONDS_PER_QUESTION) * 100)
+  const progressPct = Math.round((secondsLeft / secondsPerQuestion) * 100)
 
   return (
     <div className="animate-fade-in">

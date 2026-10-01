@@ -6,6 +6,7 @@ import Card from '../components/Card'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import { ThemeCycleButton } from '../components/ThemeToggle'
+import { House } from 'lucide-react'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -36,7 +37,14 @@ export default function Signup() {
       <div className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl animate-float" aria-hidden="true" />
       <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-success/10 blur-3xl animate-float" aria-hidden="true" />
 
-      <div className="absolute right-4 top-4">
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+        <Link
+          to="/"
+          className="inline-flex h-9 items-center gap-2 rounded-xl border border-line bg-panel2 px-3 text-sm font-medium text-ink transition-colors hover:border-primary/50 hover:text-primary"
+        >
+          <House size={15} />
+          <span>Home</span>
+        </Link>
         <ThemeCycleButton />
       </div>
 

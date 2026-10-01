@@ -2,14 +2,13 @@ import { pool } from '../config/db.js'
 import { evaluateInterview } from '../services/aiEvaluationService.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
-const QUESTIONS_PER_INTERVIEW = 5
 const JOB_STOPWORDS = new Set(['about', 'across', 'after', 'and', 'are', 'as', 'for', 'from', 'have', 'into', 'is', 'its', 'our', 'the', 'their', 'this', 'that', 'to', 'with', 'will', 'you', 'your', 'years', 'year', 'work', 'role', 'team', 'skills', 'experience', 'including', 'ability', 'strong', 'good', 'knowledge'])
 
 function words(text) {
   return String(text || '').toLowerCase().match(/[a-z0-9+#.]+/g) || []
 }
 
-function rankQuestionsForRole(questions, targetRole, jobDescription, difficulty) {
+function rankQuestionsForRole(questions, targetRole, jobDescription, difficulty, domain, limit) {
   const roleTerms = [...new Set(words(targetRole).filter((word) => word.length > 1 && !JOB_STOPWORDS.has(word)))]
   const descriptionTerms = [...new Set(words(jobDescription).filter((word) => word.length > 2 && !JOB_STOPWORDS.has(word)))]
   return [...questions]
@@ -19,11 +18,11 @@ function rankQuestionsForRole(questions, targetRole, jobDescription, difficulty)
       const descriptionMatch = descriptionTerms.filter((word) => searchable.has(word)).length
       return {
         question,
-        score: roleMatch * 3 + descriptionMatch + (question.difficulty === difficulty ? 0.5 : 0) + Math.random() * 0.1,
+        score: roleMatch * 3 + descriptionMatch + (question.domain === domain ? 2 : 0) + (question.difficulty === difficulty ? 0.5 : 0) + Math.random() * 0.1,
       }
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, QUESTIONS_PER_INTERVIEW)
+    .slice(0, limit)
     .map(({ question }) => question)
 }
 
@@ -33,48 +32,35 @@ function assertOwns(row) {
 
 /** Create an interview, snapshot a question set (via placeholder answers). */
 export async function createInterview(req, res) {
-  const { mode, domain, difficulty, targetRole = null, jobDescription = null } = req.body
+  const {
+    mode, domain, difficulty, targetRole = null, jobDescription = null,
+    questionCount = 5,
+  } = req.body
 
-  // Prefer exact mode+domain+difficulty matches, then pad from the same
-  // mode+domain (any difficulty) so interviews have a consistent question count.
-  const { rows: exact } = await pool.query(
-    `SELECT id, question_text, category
-     FROM questions
-     WHERE mode = $1 AND domain = $2 AND difficulty = $3
-     ORDER BY RANDOM()`,
-    [mode, domain, difficulty]
+  const { rows: compulsoryQuestions } = await pool.query(
+    `SELECT id, question_text, category, difficulty, domain
+     FROM questions WHERE is_compulsory = true ORDER BY id`
   )
-
-  let selected = [...exact]
-  if (selected.length < QUESTIONS_PER_INTERVIEW) {
-    const ids = selected.length ? selected.map((q) => q.id) : [0]
-    const { rows: extra } = await pool.query(
-      `SELECT id, question_text, category
-       FROM questions
-       WHERE mode = $1 AND domain = $2 AND id <> ALL($3::int[])
-       ORDER BY RANDOM()
-       LIMIT $4`,
-      [mode, domain, ids, QUESTIONS_PER_INTERVIEW - selected.length]
-    )
-    selected = selected.concat(extra)
-  }
-  selected = selected.slice(0, QUESTIONS_PER_INTERVIEW)
-
-  if (targetRole || jobDescription) {
-    const { rows: candidates } = await pool.query(
-      `SELECT id, question_text, category, difficulty
-       FROM questions
-       WHERE mode = $1 AND domain = $2`,
-      [mode, domain]
-    )
-    if (candidates.length > 0) {
-      selected = rankQuestionsForRole(candidates, targetRole, jobDescription, difficulty)
-    }
+  if (compulsoryQuestions.length > questionCount) {
+    throw new ApiError(400, `This interview has ${compulsoryQuestions.length} required questions. Choose at least that many.`)
   }
 
-  if (selected.length === 0) {
-    throw new ApiError(400, 'No questions match the selected mode, domain, and difficulty')
+  const optionalCount = questionCount - compulsoryQuestions.length
+  const { rows: candidates } = await pool.query(
+    `SELECT id, question_text, category, difficulty, domain
+     FROM questions
+     WHERE is_compulsory = false AND mode IN ($1, 'Both')
+     ORDER BY (domain = $2) DESC, RANDOM()`,
+    [mode, domain]
+  )
+  const optionalQuestions = rankQuestionsForRole(
+    candidates, targetRole, jobDescription, difficulty, domain, optionalCount
+  )
+  if (optionalQuestions.length < optionalCount) {
+    const available = compulsoryQuestions.length + optionalQuestions.length
+    throw new ApiError(400, `Only ${available} questions are available for this interview type. Ask an admin to add more questions.`)
   }
+  const selected = [...compulsoryQuestions, ...optionalQuestions]
 
   const client = await pool.connect()
   try {
@@ -104,6 +90,7 @@ export async function createInterview(req, res) {
       domain: interview.domain,
       difficulty: interview.difficulty,
       targetRole: interview.target_role,
+      questionCount: selected.length,
       status: interview.status,
       questions: selected.map((q) => ({ id: q.id, question_text: q.question_text, category: q.category })),
     })
@@ -215,19 +202,25 @@ export async function completeInterview(req, res) {
       )
     }
 
-    // Collect the answered questions for evaluation.
-    const { rows: answeredRows } = await client.query(
-      `SELECT a.question_id, a.answer_text, q.question_text
+    // Evaluate the full interview, including skipped questions. Skips receive 0.
+    const { rows: questionRows } = await client.query(
+      `SELECT a.question_id AS id, a.answer_text, q.question_text, q.sample_answer
        FROM answers a
        JOIN questions q ON q.id = a.question_id
        WHERE a.interview_id = $1
-         AND a.answer_text IS NOT NULL AND length(btrim(a.answer_text)) > 0
        ORDER BY a.id`,
       [interviewId]
     )
 
-    const questions = answeredRows.map((r) => ({ id: r.question_id, question_text: r.question_text }))
-    const candidateAnswers = answeredRows.map((r) => ({ question_id: r.question_id, answer_text: r.answer_text }))
+    const questions = questionRows.map((row) => ({
+      id: row.id,
+      question_text: row.question_text,
+      sample_answer: row.sample_answer,
+    }))
+    const candidateAnswers = questionRows.map((row) => ({
+      question_id: row.id,
+      answer_text: row.answer_text || '',
+    }))
 
     const evaluation = await evaluateInterview({
       questions,
@@ -297,11 +290,6 @@ export async function interviewResults(req, res) {
   } = await pool.query('SELECT * FROM interviews WHERE id = $1 AND user_id = $2', [interviewId, req.userId])
   assertOwns(interview)
 
-  const {
-    rows: [row],
-  } = await pool.query('SELECT * FROM evaluations WHERE interview_id = $1', [interviewId])
-  if (!row) throw new ApiError(404, 'This interview has not been evaluated yet')
-
   // Question texts so the client can render per-question breakdowns.
   const { rows: questionRows } = await pool.query(
     `SELECT a.question_id AS id, q.question_text, a.answer_text, a.answer_mode, a.time_taken_seconds
@@ -311,6 +299,55 @@ export async function interviewResults(req, res) {
      ORDER BY a.id`,
     [interviewId]
   )
+
+  const {
+    rows: [row],
+  } = await pool.query('SELECT * FROM evaluations WHERE interview_id = $1', [interviewId])
+  if (!row) throw new ApiError(404, 'This interview has not been evaluated yet')
+
+  // Repair reports created before skipped questions were included in scoring.
+  const previousEvaluations = Array.isArray(row.question_evaluations_json)
+    ? row.question_evaluations_json
+    : []
+  const evaluationsById = new Map(previousEvaluations.map((item) => [String(item.questionId), item]))
+  const questionEvaluations = questionRows.map((question, index) => {
+    const answerProvided = Boolean(question.answer_text?.trim())
+    const previous = evaluationsById.get(String(question.id))
+    const score = answerProvided
+      ? Math.min(10, Math.max(0, Math.round(Number(previous?.score) || 0)))
+      : 0
+    return {
+      questionId: question.id,
+      questionNumber: index + 1,
+      score,
+      feedback: answerProvided
+        ? (previous?.feedback || 'This answer could not be scored.')
+        : 'No answer was submitted. This question counts as 0 in the overall score.',
+      strengths: answerProvided && Array.isArray(previous?.strengths) ? previous.strengths : [],
+      improvements: answerProvided && Array.isArray(previous?.improvements) ? previous.improvements : [],
+    }
+  })
+  const answeredCount = questionRows.filter((question) => Boolean(question.answer_text?.trim())).length
+  const overallScore = questionRows.length
+    ? Math.round(questionEvaluations.reduce((sum, question) => sum + question.score, 0) / (questionRows.length * 10) * 100)
+    : 0
+  const completionNote = `Answered ${answeredCount} of ${questionRows.length} questions; unanswered questions count as 0.`
+  const previousSummary = (row.summary || '').replace(/^Answered \d+ of \d+ questions; unanswered questions count as 0\.\s*/, '')
+  const summary = `${completionNote}${previousSummary ? ` ${previousSummary}` : ''}`
+
+  if (
+    row.overall_score !== overallScore
+    || previousEvaluations.length !== questionEvaluations.length
+    || row.summary !== summary
+  ) {
+    await pool.query(
+      `UPDATE evaluations
+       SET overall_score = $2, question_evaluations_json = $3, summary = $4
+       WHERE interview_id = $1`,
+      [interviewId, overallScore, JSON.stringify(questionEvaluations), summary]
+    )
+    await pool.query('UPDATE interviews SET total_score = $2 WHERE id = $1', [interviewId, overallScore])
+  }
 
   res.json({
     interview: {
@@ -331,12 +368,14 @@ export async function interviewResults(req, res) {
       })),
     },
     evaluation: {
-      overallScore: row.overall_score,
-      summary: row.summary,
+      overallScore,
+      answeredCount,
+      totalQuestions: questionRows.length,
+      summary,
       strengths: row.strengths,
       weaknesses: row.weaknesses,
       improvements: row.improvements,
-      questionEvaluations: row.question_evaluations_json,
+      questionEvaluations,
       source: row.raw_ai_response?.source || null,
       error: row.raw_ai_response?.error || null,
       createdAt: row.created_at,

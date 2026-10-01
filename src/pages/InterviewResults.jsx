@@ -69,6 +69,8 @@ export default function InterviewResults() {
 
   const { interview, evaluation } = data
   const overallScore = evaluation.overallScore
+  const totalQuestions = evaluation.totalQuestions ?? interview.questions?.length ?? 0
+  const answeredCount = evaluation.answeredCount ?? interview.questions?.filter((question) => question.answer?.answer_text?.trim()).length ?? 0
   const qTextById = new Map((interview.questions || []).map((q) => [String(q.id), q.question_text]))
   const questionEvaluations = evaluation.questionEvaluations || []
   const retryCount = questionEvaluations.filter((question) => Number(question.score) < 7).length || Math.min(3, questionEvaluations.length)
@@ -122,6 +124,7 @@ export default function InterviewResults() {
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-secondary text-white p-8 mb-6 animate-fade-in">
           <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-white/10 blur-2xl animate-float" aria-hidden="true" />
           <p className="text-sm text-white/80 mb-1">Overall Performance</p>
+          <p className="mb-2 text-center text-xs text-white/75">{answeredCount} of {totalQuestions} questions answered · unanswered questions count as 0</p>
           <div className="flex items-center justify-center gap-3">
             <div className="relative h-24 w-24" aria-hidden="true">
               <svg viewBox="0 0 100 100" className="h-24 w-24">

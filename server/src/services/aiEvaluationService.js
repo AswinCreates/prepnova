@@ -23,7 +23,8 @@ function buildPrompt(questions, answers, context = {}) {
   const lines = (questions || [])
     .map((q, i) => {
       const text = answerByQ.get(q.id) || '(no answer provided)'
-      return `Q${i + 1}) ${q.question_text}\nCandidate answer: ${text}`
+      const reference = q.sample_answer ? `\nReference answer guidance: ${q.sample_answer}` : ''
+      return `Q${i + 1}) ${q.question_text}${reference}\nCandidate answer: ${text}`
     })
     .join('\n\n')
 
@@ -42,7 +43,9 @@ function buildPrompt(questions, answers, context = {}) {
     'Respond with VALID JSON only (no markdown fences, no extra prose) matching EXACTLY this schema:',
     OUTPUT_SCHEMA,
     'Rules:',
-    '- overallScore must be an integer 0-100 (average of question scores scaled).',
+    '- Score every assigned question. An unanswered question is 0/10.',
+    '- overallScore must equal round(sum(question scores) / (number of assigned questions * 10) * 100).',
+    '- Do not average only the questions that received an answer.',
     '- questionEvaluations must contain ONE entry per question, using the question IDs provided below.',
     '- Each question score must be an integer 0-10.',
     '- strengths/weaknesses/improvements are arrays of concise strings.',
@@ -57,30 +60,37 @@ function buildPrompt(questions, answers, context = {}) {
 }
 
 /** Sanitize an AI response into a guaranteed-valid, complete evaluation object. */
-function sanitize(raw, questions) {
+function sanitize(raw, questions, answers) {
   const byId = {}
   for (const qe of Array.isArray(raw.questionEvaluations) ? raw.questionEvaluations : []) {
     if (qe && typeof qe.questionId !== 'undefined') byId[String(qe.questionId)] = qe
   }
 
+  const answerById = new Map((answers || []).map((answer) => [String(answer.question_id), answer.answer_text]))
   const questionEvaluations = (questions || []).map((q, i) => {
     const qe = byId[String(q.id)]
-    const score = Number(qe?.score)
+    const answered = Boolean(String(answerById.get(String(q.id)) || '').trim())
+    const score = answered ? Number(qe?.score) : 0
     return {
       questionId: q.id,
       questionNumber: i + 1,
       score: Number.isFinite(score) ? Math.min(10, Math.max(0, Math.round(score))) : 0,
-      feedback: typeof qe?.feedback === 'string' ? qe.feedback : 'No feedback provided for this question.',
-      strengths: Array.isArray(qe?.strengths) ? qe.strengths.filter((s) => typeof s === 'string') : [],
-      improvements: Array.isArray(qe?.improvements) ? qe.improvements.filter((s) => typeof s === 'string') : [],
+      feedback: !answered
+        ? 'No answer was submitted. This question counts as 0 in the overall score.'
+        : typeof qe?.feedback === 'string' ? qe.feedback : 'No feedback provided for this question.',
+      strengths: answered && Array.isArray(qe?.strengths) ? qe.strengths.filter((s) => typeof s === 'string') : [],
+      improvements: answered && Array.isArray(qe?.improvements) ? qe.improvements.filter((s) => typeof s === 'string') : [],
     }
   })
 
-  const overall = Math.min(100, Math.max(0, Math.round(Number(raw.overallScore) || 0)))
+  const answeredCount = [...answerById.values()].filter((answer) => Boolean(String(answer || '').trim())).length
+  const overall = questionEvaluations.length
+    ? Math.round(questionEvaluations.reduce((sum, question) => sum + question.score, 0) / (questionEvaluations.length * 10) * 100)
+    : 0
 
   return {
     overallScore: overall,
-    summary: typeof raw.summary === 'string' ? raw.summary : 'Evaluation complete.',
+    summary: `Answered ${answeredCount} of ${questionEvaluations.length} questions; unanswered questions count as 0. ${typeof raw.summary === 'string' ? raw.summary : 'Evaluation complete.'}`,
     strengths: Array.isArray(raw.strengths) ? raw.strengths.filter((s) => typeof s === 'string') : [],
     weaknesses: Array.isArray(raw.weaknesses) ? raw.weaknesses.filter((s) => typeof s === 'string') : [],
     improvements: Array.isArray(raw.improvements) ? raw.improvements.filter((s) => typeof s === 'string') : [],
@@ -170,7 +180,7 @@ export async function evaluateInterview({ questions, answers, context }) {
     const prompt = buildPrompt(questions, answers, context)
     const text = await callProvider(prompt)
     const raw = parseJSON(text)
-    const result = sanitize(raw, questions)
+    const result = sanitize(raw, questions, answers)
     return { ...result, source: 'ai' }
   } catch (err) {
     console.warn(`[ai-evaluation] Falling back to heuristic: ${err.message}`)

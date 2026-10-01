@@ -6,7 +6,6 @@ import Card from '../components/Card'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import PageHeader from '../components/PageHeader'
-import ThemeToggle from '../components/ThemeToggle'
 import { BriefcaseBusiness, ExternalLink, GraduationCap, Link2, MapPin, Sparkles, UserRound } from 'lucide-react'
 
 const EXPERIENCE_LEVELS = ['Student', 'Entry level', 'Mid-level', 'Senior']
@@ -241,12 +240,6 @@ export default function Profile() {
               {skillList.length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">{skillList.slice(0, 5).map((skill) => <span key={skill} className="rounded-full border border-line bg-panel px-2.5 py-1 text-[10px] font-medium text-muted">{skill}</span>)}</div>}
               {(linkedin || portfolio) && <div className="mt-4 flex flex-wrap gap-3 border-t border-line pt-3">{linkedin && <a className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline" href={linkedin} target="_blank" rel="noreferrer">LinkedIn <ExternalLink size={12} /></a>}{portfolio && <a className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline" href={portfolio} target="_blank" rel="noreferrer">Portfolio <ExternalLink size={12} /></a>}</div>}
             </div>
-          </Card>
-
-          <Card className="animate-fade-in-up">
-            <h2 className="mb-1 text-sm font-semibold text-ink">Appearance</h2>
-            <p className="mb-3 text-xs text-muted">Choose light, dark, or match your system.</p>
-            <ThemeToggle />
           </Card>
         </div>
       </div>

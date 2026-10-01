@@ -6,6 +6,7 @@ import Card from '../components/Card'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import { ThemeCycleButton } from '../components/ThemeToggle'
+import { House } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -44,7 +45,14 @@ export default function Login() {
         aria-hidden="true"
       />
 
-      <div className="absolute right-4 top-4 z-10">
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+        <Link
+          to="/"
+          className="inline-flex h-9 items-center gap-2 rounded-xl border border-line bg-panel2 px-3 text-sm font-medium text-ink transition-colors hover:border-primary/50 hover:text-primary"
+        >
+          <House size={15} />
+          <span>Home</span>
+        </Link>
         <ThemeCycleButton />
       </div>
 

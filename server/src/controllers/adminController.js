@@ -85,6 +85,44 @@ export async function listAccounts(_req, res) {
   res.json({ accounts: rows })
 }
 
+export async function listQuestions(_req, res) {
+  const { rows } = await pool.query(
+    `SELECT id, mode, domain, difficulty, question_text, category, is_compulsory
+     FROM questions
+     ORDER BY is_compulsory DESC, id DESC
+     LIMIT 250`
+  )
+  res.json({ questions: rows })
+}
+
+export async function createQuestion(req, res) {
+  const {
+    mode, domain, difficulty, questionText, category = '',
+    sampleAnswer = '', isCompulsory = false,
+  } = req.body
+
+  if (isCompulsory) {
+    const { rows: [counts] } = await pool.query(
+      'SELECT COUNT(*)::int AS total FROM questions WHERE is_compulsory = true'
+    )
+    if (counts.total >= 20) throw new ApiError(409, 'Interviews can have at most 20 required questions')
+  }
+
+  try {
+    const { rows: [question] } = await pool.query(
+      `INSERT INTO questions
+        (mode, domain, difficulty, question_text, category, sample_answer, is_compulsory)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, mode, domain, difficulty, question_text, category, is_compulsory`,
+      [isCompulsory ? 'Both' : mode, isCompulsory ? 'General' : domain, difficulty, questionText.trim(), category.trim(), sampleAnswer.trim(), isCompulsory]
+    )
+    res.status(201).json({ question })
+  } catch (err) {
+    if (err.code === '23505') throw new ApiError(409, 'That question already exists')
+    throw err
+  }
+}
+
 export async function createAdmin(req, res) {
   const { name, email, password } = req.body
   const normalizedEmail = email.trim().toLowerCase()

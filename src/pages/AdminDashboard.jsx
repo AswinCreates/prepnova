@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Activity, CalendarDays, Clock3, RefreshCw, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react'
+import { Activity, CalendarDays, Clock3, HelpCircle, Plus, RefreshCw, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react'
 
 function dateTime(value) {
   if (!value) return 'Never'
@@ -37,26 +37,36 @@ function ActivityTooltip({ active, payload }) {
 }
 
 const initialAdminForm = { name: '', email: '', password: '' }
+const initialQuestionForm = {
+  mode: 'Technical', domain: 'Web Development', difficulty: 'Medium',
+  questionText: '', category: '', sampleAnswer: '', isCompulsory: false,
+}
+const QUESTION_DOMAINS = ['General', 'Web Development', 'Data Science', 'DSA', 'System Design', 'HR / Behavioral']
 
 export default function AdminDashboard() {
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [accounts, setAccounts] = useState([])
+  const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+  const [addingQuestion, setAddingQuestion] = useState(false)
   const [form, setForm] = useState(initialAdminForm)
+  const [questionForm, setQuestionForm] = useState(initialQuestionForm)
 
   const loadDashboard = useCallback(async () => {
     setRefreshing(true)
     try {
-      const [dashboardResponse, accountsResponse] = await Promise.all([
+      const [dashboardResponse, accountsResponse, questionsResponse] = await Promise.all([
         api.get('/admin/dashboard'),
         api.get('/admin/accounts'),
+        api.get('/admin/questions'),
       ])
       setStats(dashboardResponse.data.stats)
       setAccounts(accountsResponse.data.accounts || [])
+      setQuestions(questionsResponse.data.questions || [])
       return dashboardResponse.data
     } finally {
       setRefreshing(false)
@@ -93,6 +103,15 @@ export default function AdminDashboard() {
   })), [stats])
 
   const updateForm = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+  const updateQuestionForm = (event) => {
+    const { name, value, type, checked } = event.target
+    setQuestionForm((current) => {
+      if (name === 'isCompulsory' && checked) {
+        return { ...current, isCompulsory: true, mode: 'Both', domain: 'General' }
+      }
+      return { ...current, [name]: type === 'checkbox' ? checked : value }
+    })
+  }
 
   const handleCreateAdmin = async (event) => {
     event.preventDefault()
@@ -106,6 +125,21 @@ export default function AdminDashboard() {
       toast.error(error.response?.data?.message || 'Could not create admin account')
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleCreateQuestion = async (event) => {
+    event.preventDefault()
+    setAddingQuestion(true)
+    try {
+      await api.post('/admin/questions', questionForm)
+      setQuestionForm(initialQuestionForm)
+      await loadDashboard()
+      toast.success('Interview question added')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not add question')
+    } finally {
+      setAddingQuestion(false)
     }
   }
 
@@ -198,6 +232,60 @@ export default function AdminDashboard() {
           </form>
         </Card>
       </div>
+
+      <Card className="animate-fade-in-up" padded={false}>
+        <div className="border-b border-line px-5 py-4">
+          <div className="flex items-center gap-2"><HelpCircle size={17} className="text-primary" /><h2 className="font-semibold text-ink">Interview question bank</h2></div>
+          <p className="mt-1 text-xs text-muted">Add questions for technical and HR interviews. Required questions are included in every interview.</p>
+        </div>
+        <div className="grid gap-5 p-5 xl:grid-cols-[minmax(300px,0.85fr)_1.15fr]">
+          <form onSubmit={handleCreateQuestion} className="space-y-3">
+            <label className="block text-xs font-medium text-ink">Question text
+              <textarea name="questionText" value={questionForm.questionText} onChange={updateQuestionForm} minLength={10} maxLength={600} rows={3} required placeholder="Write the interview question..." className="mt-1.5 w-full resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20" />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs font-medium text-ink">Interview type
+                <select name="mode" value={questionForm.mode} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink"><option>Technical</option><option>HR</option><option>Both</option></select>
+              </label>
+              <label className="block text-xs font-medium text-ink">Domain
+                <select name="domain" value={questionForm.domain} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink">{QUESTION_DOMAINS.map((domain) => <option key={domain}>{domain}</option>)}</select>
+              </label>
+              <label className="block text-xs font-medium text-ink">Difficulty
+                <select name="difficulty" value={questionForm.difficulty} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+              </label>
+              <label className="block text-xs font-medium text-ink">Category
+                <input name="category" value={questionForm.category} onChange={updateQuestionForm} maxLength={80} placeholder="e.g. Communication" className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none focus:border-primary/60" />
+              </label>
+            </div>
+            <label className="block text-xs font-medium text-ink">Sample answer guidance <span className="font-normal text-muted">(optional)</span>
+              <textarea name="sampleAnswer" value={questionForm.sampleAnswer} onChange={updateQuestionForm} maxLength={3000} rows={2} placeholder="Key points to look for when evaluating an answer" className="mt-1.5 w-full resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none focus:border-primary/60" />
+            </label>
+            <label className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-ink">
+              <input type="checkbox" name="isCompulsory" checked={questionForm.isCompulsory} onChange={updateQuestionForm} className="mt-0.5 accent-primary" />
+              <span><strong className="block">Ask this in every interview</strong><span className="mt-0.5 block text-muted">Required questions count toward the user’s selected question total.</span></span>
+            </label>
+            <Button type="submit" loading={addingQuestion} className="w-full"><Plus size={16} /> Add question</Button>
+          </form>
+
+          <div className="min-w-0">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-ink">Question list</h3>
+              <Badge variant="secondary">{questions.length} questions · {questions.filter((question) => question.is_compulsory).length} required</Badge>
+            </div>
+            {questions.length ? <div className="max-h-[560px] overflow-y-auto rounded-xl border border-line">
+              <div className="divide-y divide-line">{questions.map((question) => (
+                <div key={question.id} className="flex items-start justify-between gap-3 p-3.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium leading-relaxed text-ink">{question.question_text}</p>
+                    <p className="mt-1 text-[11px] text-muted">{question.mode} · {question.domain} · {question.difficulty}{question.category ? ` · ${question.category}` : ''}</p>
+                  </div>
+                  {question.is_compulsory && <Badge variant="primary">Required</Badge>}
+                </div>
+              ))}</div>
+            </div> : <p className="rounded-xl border border-line py-10 text-center text-sm text-muted">No questions have been added yet.</p>}
+          </div>
+        </div>
+      </Card>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Card className="animate-fade-in-up">
