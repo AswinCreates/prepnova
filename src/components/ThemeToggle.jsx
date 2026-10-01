@@ -10,12 +10,13 @@ const OPTIONS = [
 /** Full segmented control (Light / Dark / System). */
 export default function ThemeToggle({ className = '' }) {
   const { mode, setMode } = useTheme()
+  const isLandingToggle = className.split(/\s+/).includes('landing-theme-toggle')
 
   return (
     <div
       role="group"
       aria-label="Theme"
-      className={`flex items-center gap-1 rounded-xl border border-line bg-panel2 p-1 ${className}`}
+      className={`flex items-center gap-1 ${isLandingToggle ? 'border-0 bg-transparent p-0' : 'rounded-xl border border-line bg-panel2 p-1'} ${className}`}
     >
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = mode === value
@@ -28,8 +29,8 @@ export default function ThemeToggle({ className = '' }) {
             title={`${label} mode`}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all duration-200 active:scale-95 ${
               active
-                ? 'bg-primary text-white shadow-sm shadow-primary/20'
-                : 'text-muted hover:bg-panel hover:text-ink'
+                ? isLandingToggle ? 'text-primary' : 'bg-primary text-white shadow-sm shadow-primary/20'
+                : isLandingToggle ? 'text-muted hover:text-primary' : 'text-muted hover:bg-panel hover:text-ink'
             }`}
           >
             <Icon className="h-3.5 w-3.5" />

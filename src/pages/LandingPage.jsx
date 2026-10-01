@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowDown, ArrowRight, ArrowUpRight, AudioLines, BarChart3, Check, ChevronDown,
@@ -26,8 +26,8 @@ const faqs = [
   ['Do I need a microphone?', 'No. You can choose a text based interview at any time. Voice practice is optional.'],
 ]
 
-function Brand({ light = false }) {
-  return <Link className={`pn-brand${light ? ' pn-brand-light' : ''}`} to="/" aria-label="PrepNova home"><span className="pn-brand-mark"><Sparkles size={17} strokeWidth={2.4} /></span><span>PrepNova</span></Link>
+function Brand({ light = false, onClick }) {
+  return <Link className={`pn-brand${light ? ' pn-brand-light' : ''}`} to="/" onClick={onClick} aria-label="PrepNova home"><span className="pn-brand-mark"><Sparkles size={17} strokeWidth={2.4} /></span><span>PrepNova</span></Link>
 }
 
 function DashboardPreview() {
@@ -49,9 +49,57 @@ function DashboardPreview() {
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
+  const [activeSection, setActiveSection] = useState('')
+  const returningToTop = useRef(false)
+
+  useEffect(() => {
+    const sections = ['features', 'how-it-works', 'faq']
+      .map((id) => document.getElementById(id))
+      .filter(Boolean)
+    if (!sections.length) return undefined
+
+    const updateActiveSection = () => {
+      if (returningToTop.current) {
+        if (window.scrollY <= 1) returningToTop.current = false
+        else {
+          setActiveSection('')
+          return
+        }
+      }
+      const marker = window.innerHeight * 0.36
+      const current = sections.find((section) => {
+        const bounds = section.getBoundingClientRect()
+        return bounds.top <= marker && bounds.bottom > marker
+      })
+      setActiveSection(current?.id || '')
+    }
+
+    updateActiveSection()
+    window.addEventListener('scroll', updateActiveSection, { passive: true })
+    window.addEventListener('resize', updateActiveSection)
+    return () => {
+      window.removeEventListener('scroll', updateActiveSection)
+      window.removeEventListener('resize', updateActiveSection)
+    }
+  }, [])
+
+  const closeMenu = () => {
+    returningToTop.current = false
+    setMenuOpen(false)
+  }
+  const handleBrandClick = (event) => {
+    setMenuOpen(false)
+    setActiveSection('')
+    if (window.location.pathname === '/') {
+      event.preventDefault()
+      returningToTop.current = window.scrollY > 1
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   return (
     <main className="landing-page">
-      <header className="landing-nav"><div className="landing-nav-inner"><Brand /><button className="mobile-menu-button" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button><nav className={menuOpen ? 'landing-links landing-links-open' : 'landing-links'}><a href="#features" onClick={() => setMenuOpen(false)}>Why PrepNova</a><a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a><a href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a><div className="landing-auth"><ThemeToggle className="landing-theme-toggle" /><Link className="nav-login" to="/login">Log in</Link><Link className="nav-cta" to="/signup">Get started <ArrowRight size={16} /></Link></div></nav></div></header>
+      <header className="landing-nav"><div className="landing-nav-inner"><Brand onClick={handleBrandClick} /><button className="mobile-menu-button" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button><nav className={menuOpen ? 'landing-links landing-links-open' : 'landing-links'}><a className="landing-section-link" href="#features" aria-current={activeSection === 'features' ? 'location' : undefined} onClick={closeMenu}>Why PrepNova</a><a className="landing-section-link" href="#how-it-works" aria-current={activeSection === 'how-it-works' ? 'location' : undefined} onClick={closeMenu}>How it works</a><a className="landing-section-link" href="#faq" aria-current={activeSection === 'faq' ? 'location' : undefined} onClick={closeMenu}>FAQ</a><div className="landing-auth"><ThemeToggle className="landing-theme-toggle" /><Link className="nav-login" to="/login">Log in</Link><Link className="nav-cta" to="/signup">Get started <ArrowRight size={16} /></Link></div></nav></div></header>
 
       <section className="landing-hero"><div className="hero-inner"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-mark"><Sparkles size={13} /></span> YOUR NEXT CHAPTER STARTS HERE</div><h1>Show up ready.<br /><span>Leave your mark.</span></h1><p className="hero-description">The interview is your moment. Practice out loud, find your strongest stories, and walk in knowing you’re ready.</p><div className="hero-actions"><Link className="hero-cta" to="/signup">Start practicing <ArrowRight size={18} /></Link><a className="hero-secondary" href="#how-it-works"><span><Play size={14} fill="currentColor" /></span> See how it works</a></div><div className="hero-proof"><div className="proof-avatars"><span>A</span><span>M</span><span>J</span><span>K</span></div><p><strong>Small steps. Real progress.</strong><br />Build confidence one practice at a time.</p></div></div><div className="hero-visual"><div className="hero-visual-label"><span className="visual-label-icon"><Mic2 size={15} /></span> YOUR PERSONAL PRACTICE ROOM</div><DashboardPreview /><div className="floating-insight"><span className="insight-icon"><Check size={15} /></span><span><strong>You’re finding your rhythm</strong><small>Keep up the great work</small></span></div><div className="visual-caption"><span className="caption-line" /> A little preparation goes a long way <ArrowDown size={14} /></div></div></div><a href="#features" className="hero-scroll" aria-label="Scroll to features"><ArrowDown size={16} /></a></section>
 
