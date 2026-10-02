@@ -14,6 +14,7 @@ import InterviewHistory from './pages/InterviewHistory'
 import ErrorBoundary from './components/ErrorBoundary'
 import LandingPage from './pages/LandingPage'
 import AdminDashboard from './pages/AdminDashboard'
+import Leaderboard from './pages/Leaderboard'
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/interview/setup" element={<InterviewSetup />} />

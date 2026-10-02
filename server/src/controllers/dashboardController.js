@@ -45,3 +45,52 @@ export async function dashboardStats(req, res) {
     timeline: timeline.rows,
   })
 }
+
+/** Rank each candidate by their highest interview score, using elapsed time as a tie-breaker. */
+export async function leaderboard(req, res) {
+  const result = await pool.query(
+    `WITH attempts AS (
+       SELECT i.id AS interview_id,
+              i.user_id,
+              u.name,
+              u.headline,
+              i.total_score AS score,
+              COALESCE(SUM(a.time_taken_seconds), 0)::int AS elapsed_seconds,
+              i.completed_at,
+              i.domain,
+              i.difficulty,
+              i.mode,
+              COUNT(a.id)::int AS question_count
+       FROM interviews i
+       JOIN users u ON u.id = i.user_id AND u.role = 'user'
+       LEFT JOIN answers a ON a.interview_id = i.id
+       WHERE i.status = 'completed' AND i.total_score IS NOT NULL
+       GROUP BY i.id, u.id
+     ), best_attempts AS (
+       SELECT DISTINCT ON (user_id) *
+       FROM attempts
+       ORDER BY user_id, score DESC, elapsed_seconds ASC, completed_at ASC, interview_id ASC
+     ), ranked AS (
+       SELECT ROW_NUMBER() OVER (
+                ORDER BY score DESC, elapsed_seconds ASC, completed_at ASC, user_id ASC
+              )::int AS rank,
+              COUNT(*) OVER()::int AS participant_count,
+              *
+       FROM best_attempts
+     )
+     SELECT *
+     FROM ranked
+     WHERE rank <= 50 OR user_id = $1
+     ORDER BY rank`,
+    [req.userId]
+  )
+
+  const rows = result.rows
+  const ownEntry = rows.find((row) => row.user_id === req.userId)
+  res.json({
+    leaderboard: rows.filter((row) => row.rank <= 50),
+    participantCount: rows[0]?.participant_count ?? 0,
+    currentUserRank: ownEntry?.rank ?? null,
+    currentUserEntry: ownEntry ?? null,
+  })
+}

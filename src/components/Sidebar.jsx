@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle, { ThemeCycleButton } from './ThemeToggle'
-import { PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import { Award, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 
 /* --- nav icons --- */
 const iconProps = {
@@ -54,6 +54,7 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', Icon: GridIcon, end: true },
   { to: '/interview/setup', label: 'New Interview', Icon: SparkIcon },
   { to: '/interview/history', label: 'History', Icon: ClockIcon },
+  { to: '/leaderboard', label: 'Leaderboard', Icon: Award },
   { to: '/profile', label: 'Profile', Icon: UserIcon },
 ]
 
