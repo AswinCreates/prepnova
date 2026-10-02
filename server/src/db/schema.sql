@@ -55,6 +55,24 @@ CREATE INDEX IF NOT EXISTS idx_login_events_logged_in_at ON login_events(logged_
 CREATE INDEX IF NOT EXISTS idx_login_events_user ON login_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
+CREATE TABLE IF NOT EXISTS notifications (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type        VARCHAR(40) NOT NULL,
+  title       VARCHAR(140) NOT NULL,
+  message     TEXT NOT NULL,
+  link        VARCHAR(255),
+  dedupe_key  VARCHAR(180) NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  read_at     TIMESTAMPTZ,
+  UNIQUE (user_id, dedupe_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_created
+  ON notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread
+  ON notifications(user_id) WHERE read_at IS NULL;
+
 -- Registration signs users in immediately, so count that initial session for
 -- accounts created before registration began recording login events.
 INSERT INTO login_events (user_id, logged_in_at)

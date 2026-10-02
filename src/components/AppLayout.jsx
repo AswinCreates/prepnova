@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { ThemeCycleButton } from './ThemeToggle'
+import NotificationsCenter from './NotificationsCenter'
 import brandMark from '../assets/prepnova_logo.png'
 
 function MenuIcon() {
@@ -50,6 +51,9 @@ export default function AppLayout() {
       />
 
       <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}>
+        <div className="fixed right-5 top-5 z-40 hidden lg:block">
+          <NotificationsCenter />
+        </div>
         {/* Mobile top bar */}
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-panel/80 px-4 py-3 backdrop-blur-md lg:hidden">
           <button
@@ -66,7 +70,10 @@ export default function AppLayout() {
               PrepNova
             </span>
           </span>
-          <ThemeCycleButton />
+          <div className="flex items-center gap-2">
+            <NotificationsCenter />
+            <ThemeCycleButton />
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">

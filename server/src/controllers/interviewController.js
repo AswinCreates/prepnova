@@ -259,6 +259,18 @@ export async function completeInterview(req, res) {
       [interviewId, evaluation.overallScore]
     )
 
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, link, dedupe_key)
+       VALUES ($1, 'interview_report', 'Interview report ready', $2, $3, $4)
+       ON CONFLICT (user_id, dedupe_key) DO NOTHING`,
+      [
+        req.userId,
+        `Your ${interview.domain} interview report is ready. You scored ${evaluation.overallScore}%.`,
+        `/interview/results/${interviewId}`,
+        `interview-report:${interviewId}`,
+      ]
+    )
+
     await client.query('COMMIT')
     res.json({ interviewId, ...evaluation })
   } catch (err) {
