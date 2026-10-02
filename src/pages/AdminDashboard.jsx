@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Activity, CalendarDays, Clock3, HelpCircle, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react'
+import { Activity, CalendarDays, Clock3, HelpCircle, LayoutDashboard, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
 
 function dateTime(value) {
   if (!value) return 'Never'
@@ -22,6 +22,11 @@ function dateTime(value) {
 function shortDate(value) {
   const date = new Date(`${value}T00:00:00`)
   return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
+}
+
+function formatDuration(value) {
+  const seconds = Number(value) || 0
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 function ActivityTooltip({ active, payload }) {
@@ -48,12 +53,16 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [accounts, setAccounts] = useState([])
   const [questions, setQuestions] = useState([])
+  const [leaderboard, setLeaderboard] = useState([])
+  const [leaderboardCount, setLeaderboardCount] = useState(0)
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [resettingLeaderboard, setResettingLeaderboard] = useState(false)
   const [addingQuestion, setAddingQuestion] = useState(false)
+  const [activeSection, setActiveSection] = useState('overview')
   const [form, setForm] = useState(initialAdminForm)
   const [questionForm, setQuestionForm] = useState(initialQuestionForm)
 
@@ -71,6 +80,16 @@ export default function AdminDashboard() {
       return dashboardResponse.data
     } finally {
       setRefreshing(false)
+    }
+  }, [])
+
+  const loadLeaderboard = useCallback(async () => {
+    try {
+      const { data } = await api.get('/dashboard/leaderboard')
+      setLeaderboard(data.leaderboard || [])
+      setLeaderboardCount(data.participantCount || 0)
+    } finally {
+      setLeaderboardLoading(false)
     }
   }, [])
 
@@ -96,6 +115,11 @@ export default function AdminDashboard() {
       window.removeEventListener('focus', refreshWhenVisible)
     }
   }, [loadDashboard])
+
+  useEffect(() => {
+    if (activeSection !== 'leaderboard') return
+    loadLeaderboard().catch((error) => toast.error(error.response?.data?.message || 'Could not load leaderboard'))
+  }, [activeSection, loadLeaderboard])
 
   const chartData = useMemo(() => (stats?.trend || []).map((item) => ({
     ...item,
@@ -165,9 +189,10 @@ export default function AdminDashboard() {
     if (!confirmed) return
 
     setResettingLeaderboard(true)
+    setLeaderboardLoading(true)
     try {
       await api.post('/admin/leaderboard/reset')
-      await loadDashboard()
+      await Promise.all([loadDashboard(), loadLeaderboard()])
       toast.success('Leaderboard standings reset')
     } catch (error) {
       toast.error(error.response?.data?.message || 'Could not reset the leaderboard')
@@ -192,7 +217,7 @@ export default function AdminDashboard() {
       <PageHeader
         icon={<ShieldCheck size={20} />}
         title="Admin console"
-        subtitle="Monitor PrepNova usage and manage administrator access."
+        subtitle="Manage platform activity, accounts, questions, and leaderboard settings."
         actions={(
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" size="sm" loading={refreshing} onClick={() => loadDashboard().catch((error) => toast.error(error.response?.data?.message || 'Could not refresh dashboard'))}>
@@ -203,6 +228,29 @@ export default function AdminDashboard() {
         )}
       />
 
+      <nav aria-label="Admin console sections" className="flex gap-1 overflow-x-auto rounded-2xl border border-line bg-panel p-1.5">
+        {[
+          { id: 'overview', label: 'Overview', Icon: LayoutDashboard },
+          { id: 'administration', label: 'Administration', Icon: ShieldCheck },
+          { id: 'questions', label: 'Question bank', Icon: HelpCircle },
+          { id: 'leaderboard', label: 'Leaderboard', Icon: Trophy },
+        ].map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              if (id === 'leaderboard') setLeaderboardLoading(true)
+              setActiveSection(id)
+            }}
+            aria-current={activeSection === id ? 'page' : undefined}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${activeSection === id ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-panel2 hover:text-ink'}`}
+          >
+            <Icon size={16} />{label}
+          </button>
+        ))}
+      </nav>
+
+      {activeSection === 'overview' && <>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {statCards.map(({ label, value, note, Icon }) => (
           <Card key={label} className="animate-fade-in-up">
@@ -215,24 +263,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <Card className="animate-fade-in-up border-danger/20">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-danger/10 text-danger"><RotateCcw size={19} /></span>
-            <div>
-              <h2 className="font-semibold text-ink">Reset leaderboard</h2>
-              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted">Start a fresh ranking period. Existing standings will clear, while user accounts, interview history, and reports are preserved.</p>
-              <p className="mt-2 text-[11px] text-muted">Last reset: <span className="font-medium text-ink">{stats?.leaderboardResetAt ? dateTime(stats.leaderboardResetAt) : 'Never'}</span></p>
-            </div>
-          </div>
-          <Button type="button" variant="danger" loading={resettingLeaderboard} disabled={resettingLeaderboard} onClick={handleResetLeaderboard} className="shrink-0">
-            <RotateCcw size={15} /> Reset standings
-          </Button>
-        </div>
-      </Card>
-
-      <div className="grid gap-5 xl:grid-cols-3">
-        <Card className="animate-fade-in-up xl:col-span-2">
+      <Card className="animate-fade-in-up">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><h2 className="font-semibold text-ink">Signups and login activity</h2><p className="mt-1 text-xs text-muted">Daily activity over the last 30 days</p></div>
             <div className="flex gap-3 text-[11px]"><span className="inline-flex items-center gap-1.5 text-primary"><i className="h-2 w-2 rounded-full bg-primary" />New accounts</span><span className="inline-flex items-center gap-1.5 text-secondary"><i className="h-2 w-2 rounded-full bg-secondary" />Successful logins</span></div>
@@ -249,23 +280,48 @@ export default function AdminDashboard() {
               </BarChart>
             </ResponsiveContainer>
           )}
+      </Card>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <Card className="animate-fade-in-up">
+          <div className="mb-4 flex items-center gap-2"><CalendarDays size={16} className="text-primary" /><h2 className="font-semibold text-ink">Recent signups</h2></div>
+          {stats?.recentUsers?.length ? <div className="divide-y divide-line">{stats.recentUsers.map((account) => (
+            <div key={account.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              <div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{account.name}</p><p className="truncate text-xs text-muted">{account.email}</p></div>
+              <time className="shrink-0 text-[10px] text-muted">{dateTime(account.created_at)}</time>
+            </div>
+          ))}</div> : <p className="py-8 text-center text-sm text-muted">No user accounts yet.</p>}
         </Card>
 
+        <Card className="animate-fade-in-up">
+          <div className="mb-4 flex items-center gap-2"><Activity size={16} className="text-secondary" /><h2 className="font-semibold text-ink">Recent user logins</h2></div>
+          {stats?.recentLogins?.length ? <div className="divide-y divide-line">{stats.recentLogins.map((event, index) => (
+            <div key={`${event.email}-${event.logged_in_at}-${index}`} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              <div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{event.name}</p><p className="truncate text-xs text-muted">{event.email}</p></div>
+              <time className="shrink-0 text-[10px] text-muted">{dateTime(event.logged_in_at)}</time>
+            </div>
+          ))}</div> : <p className="py-8 text-center text-sm text-muted">No successful user logins recorded yet.</p>}
+        </Card>
+      </div>
+      </>}
+
+      {activeSection === 'administration' && <>
         <Card className="animate-fade-in-up">
           <div className="mb-4 flex items-start gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><UserPlus size={19} /></span>
             <div><h2 className="font-semibold text-ink">Add an administrator</h2><p className="mt-1 text-xs leading-relaxed text-muted">Admin accounts can view usage and create additional admins.</p></div>
           </div>
-          <form onSubmit={handleCreateAdmin} className="space-y-3">
+          <form onSubmit={handleCreateAdmin} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
             <Input label="Full name" name="name" value={form.name} onChange={updateForm} autoComplete="name" minLength={2} maxLength={120} required />
             <Input label="Email" name="email" type="email" value={form.email} onChange={updateForm} autoComplete="email" maxLength={255} required />
             <Input label="Temporary password" name="password" type="password" value={form.password} onChange={updateForm} autoComplete="new-password" minLength={8} maxLength={128} required />
-            <p className="text-[10px] leading-relaxed text-muted">Share the temporary password securely. The new administrator can use it to sign in.</p>
             <Button type="submit" loading={creating} className="w-full"><UserPlus size={16} /> Create admin account</Button>
           </form>
+          <p className="mt-3 text-[10px] leading-relaxed text-muted">Share the temporary password securely. The new administrator can use it to sign in.</p>
         </Card>
-      </div>
+      </>}
 
+      {activeSection === 'questions' && <>
       <Card className="animate-fade-in-up" padded={false}>
         <div className="border-b border-line px-5 py-4">
           <div className="flex items-center gap-2"><HelpCircle size={17} className="text-primary" /><h2 className="font-semibold text-ink">Interview question bank</h2></div>
@@ -319,29 +375,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       </Card>
+      </>}
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Card className="animate-fade-in-up">
-          <div className="mb-4 flex items-center gap-2"><CalendarDays size={16} className="text-primary" /><h2 className="font-semibold text-ink">Recent signups</h2></div>
-          {stats?.recentUsers?.length ? <div className="divide-y divide-line">{stats.recentUsers.map((account) => (
-            <div key={account.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-              <div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{account.name}</p><p className="truncate text-xs text-muted">{account.email}</p></div>
-              <time className="shrink-0 text-[10px] text-muted">{dateTime(account.created_at)}</time>
-            </div>
-          ))}</div> : <p className="py-8 text-center text-sm text-muted">No user accounts yet.</p>}
-        </Card>
-
-        <Card className="animate-fade-in-up">
-          <div className="mb-4 flex items-center gap-2"><Activity size={16} className="text-secondary" /><h2 className="font-semibold text-ink">Recent user logins</h2></div>
-          {stats?.recentLogins?.length ? <div className="divide-y divide-line">{stats.recentLogins.map((event, index) => (
-            <div key={`${event.email}-${event.logged_in_at}-${index}`} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-              <div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{event.name}</p><p className="truncate text-xs text-muted">{event.email}</p></div>
-              <time className="shrink-0 text-[10px] text-muted">{dateTime(event.logged_in_at)}</time>
-            </div>
-          ))}</div> : <p className="py-8 text-center text-sm text-muted">No successful user logins recorded yet.</p>}
-        </Card>
-      </div>
-
+      {activeSection === 'administration' && <>
       <Card className="animate-fade-in-up" padded={false}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4">
           <div><h2 className="font-semibold text-ink">Account directory</h2><p className="mt-1 text-xs text-muted">Latest 100 PrepNova accounts</p></div>
@@ -379,6 +415,50 @@ export default function AdminDashboard() {
           </table>
         </div>
       </Card>
+      </>}
+
+      {activeSection === 'leaderboard' && <>
+      <Card className="animate-fade-in-up border-danger/20">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-danger/10 text-danger"><RotateCcw size={19} /></span>
+            <div>
+              <h2 className="font-semibold text-ink">Reset leaderboard</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted">Start a fresh ranking period. Existing standings will clear, while user accounts, interview history, and reports are preserved.</p>
+              <p className="mt-2 text-[11px] text-muted">Last reset: <span className="font-medium text-ink">{stats?.leaderboardResetAt ? dateTime(stats.leaderboardResetAt) : 'Never'}</span></p>
+            </div>
+          </div>
+          <Button type="button" variant="danger" loading={resettingLeaderboard} disabled={resettingLeaderboard} onClick={handleResetLeaderboard} className="shrink-0">
+            <RotateCcw size={15} /> Reset standings
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="animate-fade-in-up" padded={false}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <div><div className="flex items-center gap-2"><Trophy size={17} className="text-primary" /><h2 className="font-semibold text-ink">Current leaderboard</h2></div><p className="mt-1 text-xs text-muted">Candidate standings since the last reset, ranked by score and then completion time.</p></div>
+          <Badge variant="secondary">{leaderboardCount} candidates</Badge>
+        </div>
+        {leaderboardLoading ? <div className="flex justify-center py-12"><Loader /></div> : leaderboard.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left text-xs">
+              <thead className="bg-panel2 text-[10px] uppercase tracking-wide text-muted"><tr><th className="px-5 py-3 font-semibold">Rank</th><th className="px-4 py-3 font-semibold">Candidate</th><th className="px-4 py-3 font-semibold">Domain</th><th className="px-4 py-3 text-right font-semibold">Score</th><th className="px-4 py-3 text-right font-semibold">Time</th><th className="px-5 py-3 text-right font-semibold">Completed</th></tr></thead>
+              <tbody className="divide-y divide-line">{leaderboard.map((entry) => (
+                <tr key={entry.user_id} className="transition-colors hover:bg-panel2/60">
+                  <td className="px-5 py-3 font-bold tabular-nums text-primary">#{entry.rank}</td>
+                  <td className="px-4 py-3"><p className="font-medium text-ink">{entry.name}</p><p className="mt-0.5 text-[10px] text-muted">{entry.headline || entry.mode}</p></td>
+                  <td className="px-4 py-3 text-muted">{entry.domain} · {entry.difficulty}</td>
+                  <td className="px-4 py-3 text-right font-bold tabular-nums text-ink">{entry.score}%</td>
+                  <td className="px-4 py-3 text-right font-medium tabular-nums text-ink">{formatDuration(entry.elapsed_seconds)}</td>
+                  <td className="px-5 py-3 text-right text-muted">{dateTime(entry.completed_at)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        ) : <div className="px-5 py-12 text-center"><Trophy size={28} className="mx-auto mb-2 text-muted/60" /><p className="text-sm font-medium text-ink">No leaderboard entries yet</p><p className="mt-1 text-xs text-muted">Completed interviews will appear here.</p></div>}
+        {leaderboardCount > leaderboard.length && <p className="border-t border-line px-5 py-3 text-center text-xs text-muted">Showing the top 50 candidates.</p>}
+      </Card>
+      </>}
     </div>
   )
 }
