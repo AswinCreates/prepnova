@@ -98,6 +98,17 @@ ALTER TABLE interviews ADD COLUMN IF NOT EXISTS job_description TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_interviews_user ON interviews(user_id);
 
+-- Store the active leaderboard epoch without deleting interview history.
+CREATE TABLE IF NOT EXISTS leaderboard_control (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  reset_at TIMESTAMPTZ,
+  reset_by INTEGER
+);
+
+INSERT INTO leaderboard_control (id, reset_at)
+VALUES (1, NULL)
+ON CONFLICT (id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS questions (
   id            SERIAL PRIMARY KEY,
   mode          VARCHAR(20) NOT NULL DEFAULT 'Technical',

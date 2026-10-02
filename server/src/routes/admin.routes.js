@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { createAdmin, createQuestion, deleteAccount, getAdminDashboard, listAccounts, listQuestions } from '../controllers/adminController.js'
+import { createAdmin, createQuestion, deleteAccount, getAdminDashboard, listAccounts, listQuestions, resetLeaderboard } from '../controllers/adminController.js'
 import { auth } from '../middleware/auth.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { asyncHandler, validate } from '../utils/validate.js'
@@ -23,6 +23,7 @@ const createQuestionSchema = z.object({
 
 router.use(auth, requireAdmin)
 router.get('/dashboard', asyncHandler(getAdminDashboard))
+router.post('/leaderboard/reset', asyncHandler(resetLeaderboard))
 router.get('/accounts', asyncHandler(listAccounts))
 router.delete('/accounts/:id', asyncHandler(deleteAccount))
 router.get('/questions', asyncHandler(listQuestions))

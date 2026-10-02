@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Activity, CalendarDays, Clock3, HelpCircle, Plus, RefreshCw, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react'
+import { Activity, CalendarDays, Clock3, HelpCircle, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react'
 
 function dateTime(value) {
   if (!value) return 'Never'
@@ -52,6 +52,7 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+  const [resettingLeaderboard, setResettingLeaderboard] = useState(false)
   const [addingQuestion, setAddingQuestion] = useState(false)
   const [form, setForm] = useState(initialAdminForm)
   const [questionForm, setQuestionForm] = useState(initialQuestionForm)
@@ -64,7 +65,7 @@ export default function AdminDashboard() {
         api.get('/admin/accounts'),
         api.get('/admin/questions'),
       ])
-      setStats(dashboardResponse.data.stats)
+      setStats({ ...dashboardResponse.data.stats, leaderboardResetAt: dashboardResponse.data.leaderboardResetAt })
       setAccounts(accountsResponse.data.accounts || [])
       setQuestions(questionsResponse.data.questions || [])
       return dashboardResponse.data
@@ -159,6 +160,22 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleResetLeaderboard = async () => {
+    const confirmed = window.confirm('Reset the leaderboard now? Current rankings will be cleared. User accounts, interview history, and reports will remain unchanged.')
+    if (!confirmed) return
+
+    setResettingLeaderboard(true)
+    try {
+      await api.post('/admin/leaderboard/reset')
+      await loadDashboard()
+      toast.success('Leaderboard standings reset')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not reset the leaderboard')
+    } finally {
+      setResettingLeaderboard(false)
+    }
+  }
+
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Loader size="lg" /></div>
   }
@@ -197,6 +214,22 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      <Card className="animate-fade-in-up border-danger/20">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-danger/10 text-danger"><RotateCcw size={19} /></span>
+            <div>
+              <h2 className="font-semibold text-ink">Reset leaderboard</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted">Start a fresh ranking period. Existing standings will clear, while user accounts, interview history, and reports are preserved.</p>
+              <p className="mt-2 text-[11px] text-muted">Last reset: <span className="font-medium text-ink">{stats?.leaderboardResetAt ? dateTime(stats.leaderboardResetAt) : 'Never'}</span></p>
+            </div>
+          </div>
+          <Button type="button" variant="danger" loading={resettingLeaderboard} disabled={resettingLeaderboard} onClick={handleResetLeaderboard} className="shrink-0">
+            <RotateCcw size={15} /> Reset standings
+          </Button>
+        </div>
+      </Card>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <Card className="animate-fade-in-up xl:col-span-2">

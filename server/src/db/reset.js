@@ -16,7 +16,7 @@ async function reset() {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    await client.query('DROP TABLE IF EXISTS evaluations, answers, questions, interviews, users CASCADE')
+    await client.query('DROP TABLE IF EXISTS evaluations, answers, questions, interviews, leaderboard_control, users CASCADE')
     const schema = readFileSync(join(__dirname, 'schema.sql'), 'utf8')
     await client.query(schema)
     await client.query('COMMIT')

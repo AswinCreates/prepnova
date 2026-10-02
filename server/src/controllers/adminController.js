@@ -4,7 +4,7 @@ import { sanitizeUser } from '../middleware/auth.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 export async function getAdminDashboard(_req, res) {
-  const [summary, trend, recentUsers, recentLogins] = await Promise.all([
+  const [summary, trend, recentUsers, recentLogins, leaderboardStatus] = await Promise.all([
     pool.query(
       `SELECT
          COUNT(*) FILTER (WHERE role = 'user')::int AS total_users,
@@ -51,6 +51,9 @@ export async function getAdminDashboard(_req, res) {
        ORDER BY event.logged_in_at DESC
        LIMIT 8`
     ),
+    pool.query(
+      `SELECT reset_at FROM leaderboard_control WHERE id = 1`
+    ),
   ])
 
   const [counts] = summary.rows
@@ -72,7 +75,30 @@ export async function getAdminDashboard(_req, res) {
     trend: trend.rows,
     recentUsers: recentUsers.rows,
     recentLogins: recentLogins.rows,
+    leaderboardResetAt: leaderboardStatus.rows[0]?.reset_at ?? null,
   })
+}
+
+export async function resetLeaderboard(req, res) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const { rows: [status] } = await client.query(
+      `INSERT INTO leaderboard_control (id, reset_at, reset_by)
+       VALUES (1, clock_timestamp(), $1)
+       ON CONFLICT (id) DO UPDATE
+       SET reset_at = clock_timestamp(), reset_by = EXCLUDED.reset_by
+       RETURNING reset_at`,
+      [req.userId]
+    )
+    await client.query('COMMIT')
+    res.json({ message: 'Leaderboard reset successfully', resetAt: status.reset_at })
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
 }
 
 export async function listAccounts(_req, res) {

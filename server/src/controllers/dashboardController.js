@@ -65,6 +65,10 @@ export async function leaderboard(req, res) {
        JOIN users u ON u.id = i.user_id AND u.role = 'user'
        LEFT JOIN answers a ON a.interview_id = i.id
        WHERE i.status = 'completed' AND i.total_score IS NOT NULL
+         AND i.completed_at > COALESCE(
+           (SELECT reset_at FROM leaderboard_control WHERE id = 1),
+           '-infinity'::timestamptz
+         )
        GROUP BY i.id, u.id
      ), best_attempts AS (
        SELECT DISTINCT ON (user_id) *
