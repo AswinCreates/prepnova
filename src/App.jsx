@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
@@ -15,6 +15,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import LandingPage from './pages/LandingPage'
 import AdminDashboard from './pages/AdminDashboard'
 import Leaderboard from './pages/Leaderboard'
+import NotFound from './pages/NotFound'
 
 function App() {
   return (
@@ -45,7 +46,7 @@ function App() {
             </Route>
 
             <Route path="/" element={<LandingPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
