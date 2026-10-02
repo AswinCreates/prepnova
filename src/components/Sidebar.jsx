@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle, { ThemeCycleButton } from './ThemeToggle'
 import { Award, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import brandMark from '../assets/prepnova_logo.png'
 
 /* --- nav icons --- */
 const iconProps = {
@@ -90,8 +91,8 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
         {/* Brand */}
         <div className={`flex items-center justify-between px-5 py-5 ${collapsed ? 'lg:flex-col lg:justify-center lg:gap-3 lg:px-2' : ''}`}>
           <NavLink to="/dashboard" onClick={handleNav} title={collapsed ? 'PrepNova' : undefined} className={`flex items-center gap-3 ${collapsed ? 'lg:justify-center' : ''}`}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg font-black text-white shadow-lg shadow-primary/30">
-              P
+            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm ring-1 ring-line">
+              <img src={brandMark} alt="" className="h-full w-full object-contain" />
             </span>
             <span className={`text-lg font-bold tracking-tight ${collapsed ? 'lg:hidden' : ''}`}>
               <span className="text-primary">

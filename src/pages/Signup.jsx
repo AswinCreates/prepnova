@@ -7,6 +7,7 @@ import Input from '../components/Input'
 import Button from '../components/Button'
 import { ThemeCycleButton } from '../components/ThemeToggle'
 import { House } from 'lucide-react'
+import brandMark from '../assets/prepnova_logo.png'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -50,6 +51,10 @@ export default function Signup() {
 
       <div className="relative flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-sm animate-fade-in-up border-primary/20">
+          <div className="mb-5 flex items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-white p-1"><img src={brandMark} alt="" className="h-full w-full object-contain" /></span>
+            <span className="text-lg font-bold tracking-tight text-primary">PrepNova</span>
+          </div>
           <h1 className="text-3xl font-bold mb-1 text-primary">
             Create your account
           </h1>

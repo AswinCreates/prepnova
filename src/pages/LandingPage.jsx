@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import './LandingPage.css'
 import ThemeToggle from '../components/ThemeToggle'
+import brandMark from '../assets/prepnova_logo.png'
 
 const features = [
   { Icon: Target, title: 'Practice that feels real', text: 'Role specific questions help you rehearse the moments that matter, from behavioral rounds to technical screens.' },
@@ -27,7 +28,7 @@ const faqs = [
 ]
 
 function Brand({ light = false, onClick }) {
-  return <Link className={`pn-brand${light ? ' pn-brand-light' : ''}`} to="/" onClick={onClick} aria-label="PrepNova home"><span className="pn-brand-mark"><Sparkles size={17} strokeWidth={2.4} /></span><span>PrepNova</span></Link>
+  return <Link className={`pn-brand${light ? ' pn-brand-light' : ''}`} to="/" onClick={onClick} aria-label="PrepNova home"><span className="pn-brand-mark"><img src={brandMark} alt="" /></span><span>PrepNova</span></Link>
 }
 
 function DashboardPreview() {

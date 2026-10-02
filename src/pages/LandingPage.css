@@ -183,3 +183,6 @@ html.dark .landing-nav{border-color:rgba(49,83,84,.65)!important;background:colo
 .landing-nav .mobile-menu-button{background:transparent;color:var(--lp-ink)}
 html.dark .landing-nav .mobile-menu-button{background:transparent;color:var(--lp-ink)}
 @media(max-width:700px){.landing-links-open .landing-section-link[aria-current="location"]{padding-left:14px}.landing-section-link::before{left:0}}
+/* Use the supplied mark consistently across the landing page brand lockup. */
+.pn-brand-mark{background:#fff!important;padding:3px;border:1px solid #e8e7e0;box-shadow:none!important}
+.pn-brand-mark img{display:block;width:100%;height:100%;object-fit:contain}

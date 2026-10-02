@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { ThemeCycleButton } from './ThemeToggle'
+import brandMark from '../assets/prepnova_logo.png'
 
 function MenuIcon() {
   return (
@@ -59,7 +60,8 @@ export default function AppLayout() {
           >
             <MenuIcon />
           </button>
-          <span className="text-base font-bold">
+          <span className="flex items-center gap-2 text-base font-bold">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-white p-0.5 ring-1 ring-line"><img src={brandMark} alt="" className="h-full w-full object-contain" /></span>
             <span className="text-primary">
               PrepNova
             </span>
