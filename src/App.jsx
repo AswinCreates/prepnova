@@ -16,6 +16,7 @@ import LandingPage from './pages/LandingPage'
 import AdminDashboard from './pages/AdminDashboard'
 import Leaderboard from './pages/Leaderboard'
 import NotFound from './pages/NotFound'
+import SupportPage from './pages/SupportPage'
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             >
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/support/:ticketId?" element={<SupportPage />} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/interview/setup" element={<InterviewSetup />} />

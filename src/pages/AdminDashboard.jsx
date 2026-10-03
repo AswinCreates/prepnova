@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import Card from '../components/Card'
@@ -11,7 +12,8 @@ import { useAuth } from '../context/AuthContext'
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Activity, CalendarDays, Clock3, Globe2, HelpCircle, LayoutDashboard, MapPin, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
+import { Activity, CalendarDays, Clock3, Globe2, HelpCircle, LayoutDashboard, MapPin, MessagesSquare, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
+import AdminTicketsPanel from './AdminTicketsPanel'
 
 function dateTime(value) {
   if (!value) return 'Never'
@@ -49,6 +51,9 @@ const initialQuestionForm = {
 const QUESTION_DOMAINS = ['General', 'Web Development', 'Data Science', 'DSA', 'System Design', 'HR / Behavioral']
 
 export default function AdminDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedSection = searchParams.get('section')
+  const activeSection = ['overview', 'administration', 'questions', 'locations', 'tickets', 'leaderboard'].includes(requestedSection) ? requestedSection : 'overview'
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [accounts, setAccounts] = useState([])
@@ -64,7 +69,6 @@ export default function AdminDashboard() {
   const [deletingId, setDeletingId] = useState(null)
   const [resettingLeaderboard, setResettingLeaderboard] = useState(false)
   const [addingQuestion, setAddingQuestion] = useState(false)
-  const [activeSection, setActiveSection] = useState('overview')
   const [form, setForm] = useState(initialAdminForm)
   const [questionForm, setQuestionForm] = useState(initialQuestionForm)
 
@@ -238,6 +242,7 @@ export default function AdminDashboard() {
           { id: 'administration', label: 'Administration', Icon: ShieldCheck },
           { id: 'questions', label: 'Question bank', Icon: HelpCircle },
           { id: 'locations', label: 'Locations', Icon: MapPin },
+          { id: 'tickets', label: 'Support tickets', Icon: MessagesSquare },
           { id: 'leaderboard', label: 'Leaderboard', Icon: Trophy },
         ].map(({ id, label, Icon }) => (
           <button
@@ -245,7 +250,7 @@ export default function AdminDashboard() {
             type="button"
             onClick={() => {
               if (id === 'leaderboard') setLeaderboardLoading(true)
-              setActiveSection(id)
+              setSearchParams({ section: id }, { replace: true })
             }}
             aria-current={activeSection === id ? 'page' : undefined}
             className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${activeSection === id ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-panel2 hover:text-ink'}`}
@@ -449,6 +454,8 @@ export default function AdminDashboard() {
         </div>
       </Card>
       </>}
+
+      {activeSection === 'tickets' && <AdminTicketsPanel />}
 
       {activeSection === 'leaderboard' && <>
       <Card className="animate-fade-in-up border-danger/20">

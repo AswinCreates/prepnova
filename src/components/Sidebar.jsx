@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle, { ThemeCycleButton } from './ThemeToggle'
-import { Award, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import { Award, LifeBuoy, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 import brandMark from '../assets/prepnova_logo.png'
 
 /* --- nav icons --- */
@@ -56,6 +56,7 @@ const NAV_ITEMS = [
   { to: '/interview/setup', label: 'New Interview', Icon: SparkIcon },
   { to: '/interview/history', label: 'History', Icon: ClockIcon },
   { to: '/leaderboard', label: 'Leaderboard', Icon: Award },
+  { to: '/support', label: 'Help & Support', Icon: LifeBuoy },
   { to: '/profile', label: 'Profile', Icon: UserIcon },
 ]
 

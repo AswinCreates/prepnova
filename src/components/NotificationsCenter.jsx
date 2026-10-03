@@ -29,7 +29,7 @@ export default function NotificationsCenter() {
     let active = true
     const load = () => refresh().catch(() => {})
     load()
-    const interval = window.setInterval(load, 60000)
+    const interval = window.setInterval(load, 15000)
     const onFocus = () => { if (active) load() }
     window.addEventListener('focus', onFocus)
     return () => {
@@ -75,7 +75,11 @@ export default function NotificationsCenter() {
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          const willOpen = !open
+          setOpen(willOpen)
+          if (willOpen) refresh().catch(() => {})
+        }}
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         aria-expanded={open}
         aria-haspopup="dialog"

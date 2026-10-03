@@ -77,6 +77,35 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_created
 CREATE INDEX IF NOT EXISTS idx_notifications_unread
   ON notifications(user_id) WHERE read_at IS NULL;
 
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject     VARCHAR(160) NOT NULL,
+  category    VARCHAR(40) NOT NULL CHECK (category IN ('Question','Technical issue','Account','Feedback','Complaint','Other')),
+  status      VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','closed')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  closed_at   TIMESTAMPTZ,
+  closed_by   INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user_updated
+  ON support_tickets(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status_updated
+  ON support_tickets(status, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS support_ticket_messages (
+  id          BIGSERIAL PRIMARY KEY,
+  ticket_id   INTEGER NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+  sender_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  sender_role VARCHAR(20) NOT NULL CHECK (sender_role IN ('user','admin')),
+  message     TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_ticket_messages_ticket
+  ON support_ticket_messages(ticket_id, created_at, id);
+
 -- Registration signs users in immediately, so count that initial session for
 -- accounts created before registration began recording login events.
 INSERT INTO login_events (user_id, logged_in_at)
