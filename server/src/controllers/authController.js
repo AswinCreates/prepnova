@@ -15,7 +15,7 @@ export async function register(req, res) {
       `INSERT INTO users (name, email, password_hash, role, login_count, last_login_at)
        VALUES ($1, $2, $3, 'user', 1, now())
        RETURNING id, name, email, preferred_domain, target_skills,
-                 headline, experience_level, location, target_role, bio,
+                 headline, experience_level, location, state, country, target_role, bio,
                  linkedin_url, portfolio_url, role, login_count, last_login_at, created_at`,
       [name, email, passwordHash]
     )
@@ -52,7 +52,7 @@ export async function login(req, res) {
        SET login_count = login_count + 1, last_login_at = now()
        WHERE id = $1
        RETURNING id, name, email, preferred_domain, target_skills, headline,
-                 experience_level, location, target_role, bio, linkedin_url,
+                 experience_level, location, state, country, target_role, bio, linkedin_url,
                  portfolio_url, role, login_count, last_login_at, created_at`,
       [row.id]
     )
@@ -72,7 +72,7 @@ export async function me(req, res) {
     rows: [row],
   } = await pool.query(
     `SELECT id, name, email, preferred_domain, target_skills,
-            headline, experience_level, location, target_role, bio,
+            headline, experience_level, location, state, country, target_role, bio,
             linkedin_url, portfolio_url, role, login_count, last_login_at, created_at
      FROM users WHERE id = $1`,
     [req.userId]

@@ -3,7 +3,7 @@ import { sanitizeUser } from '../middleware/auth.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 const USER_COLUMNS = `id, name, email, preferred_domain, target_skills, headline,
-  experience_level, location, target_role, bio, linkedin_url, portfolio_url,
+  experience_level, location, state, country, target_role, bio, linkedin_url, portfolio_url,
   role, login_count, last_login_at, created_at`
 
 export async function getProfile(req, res) {
@@ -31,6 +31,8 @@ export async function updateProfile(req, res) {
   const headline = next('headline', 'headline')
   const experienceLevel = next('experienceLevel', 'experience_level')
   const location = next('location', 'location')
+  const state = next('state', 'state')
+  const country = next('country', 'country')
   const targetRole = next('targetRole', 'target_role')
   const bio = next('bio', 'bio')
   const linkedinUrl = next('linkedinUrl', 'linkedin_url')
@@ -41,11 +43,12 @@ export async function updateProfile(req, res) {
   } = await pool.query(
     `UPDATE users
      SET name = $1, preferred_domain = $2, target_skills = $3,
-         headline = $4, experience_level = $5, location = $6, target_role = $7,
-         bio = $8, linkedin_url = $9, portfolio_url = $10, updated_at = now()
-     WHERE id = $11
+         headline = $4, experience_level = $5, location = $6, state = $7,
+         country = $8, target_role = $9, bio = $10, linkedin_url = $11,
+         portfolio_url = $12, updated_at = now()
+     WHERE id = $13
      RETURNING ${USER_COLUMNS}`,
-    [name, preferredDomain, targetSkills, headline, experienceLevel, location, targetRole, bio, linkedinUrl, portfolioUrl, req.userId]
+    [name, preferredDomain, targetSkills, headline, experienceLevel, location, state, country, targetRole, bio, linkedinUrl, portfolioUrl, req.userId]
   )
   res.json({ user: sanitizeUser(row) })
 }

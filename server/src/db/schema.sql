@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
   headline        VARCHAR(160),
   experience_level VARCHAR(30),
   location        VARCHAR(120),
+  state           VARCHAR(120),
+  country         VARCHAR(120),
   target_role     VARCHAR(160),
   bio             TEXT,
   linkedin_url    TEXT,
@@ -27,6 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS headline VARCHAR(160);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS experience_level VARCHAR(30);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(120);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(120);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS target_role VARCHAR(160);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_url TEXT;

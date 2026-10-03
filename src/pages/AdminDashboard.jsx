@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { Activity, CalendarDays, Clock3, HelpCircle, LayoutDashboard, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
+import { Activity, CalendarDays, Clock3, Globe2, HelpCircle, LayoutDashboard, MapPin, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
 
 function dateTime(value) {
   if (!value) return 'Never'
@@ -53,6 +53,8 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [accounts, setAccounts] = useState([])
   const [questions, setQuestions] = useState([])
+  const [locations, setLocations] = useState([])
+  const [locationSummary, setLocationSummary] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
   const [leaderboardCount, setLeaderboardCount] = useState(0)
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
@@ -75,6 +77,8 @@ export default function AdminDashboard() {
         api.get('/admin/questions'),
       ])
       setStats({ ...dashboardResponse.data.stats, leaderboardResetAt: dashboardResponse.data.leaderboardResetAt })
+      setLocations(dashboardResponse.data.locations || [])
+      setLocationSummary(dashboardResponse.data.locationSummary || null)
       setAccounts(accountsResponse.data.accounts || [])
       setQuestions(questionsResponse.data.questions || [])
       return dashboardResponse.data
@@ -233,6 +237,7 @@ export default function AdminDashboard() {
           { id: 'overview', label: 'Overview', Icon: LayoutDashboard },
           { id: 'administration', label: 'Administration', Icon: ShieldCheck },
           { id: 'questions', label: 'Question bank', Icon: HelpCircle },
+          { id: 'locations', label: 'Locations', Icon: MapPin },
           { id: 'leaderboard', label: 'Leaderboard', Icon: Trophy },
         ].map(({ id, label, Icon }) => (
           <button
@@ -318,6 +323,34 @@ export default function AdminDashboard() {
             <Button type="submit" loading={creating} className="w-full"><UserPlus size={16} /> Create admin account</Button>
           </form>
           <p className="mt-3 text-[10px] leading-relaxed text-muted">Share the temporary password securely. The new administrator can use it to sign in.</p>
+        </Card>
+      </>}
+
+      {activeSection === 'locations' && <>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><MapPin size={19} /></span><div><p className="text-xs text-muted">Users who shared a state or country</p><p className="mt-1 text-xl font-bold tabular-nums text-ink">{(locationSummary?.users_with_location || 0).toLocaleString()}</p></div></Card>
+          <Card className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-secondary/10 text-secondary"><Globe2 size={19} /></span><div><p className="text-xs text-muted">Countries represented</p><p className="mt-1 text-xl font-bold tabular-nums text-ink">{(locationSummary?.countries || 0).toLocaleString()}</p></div></Card>
+        </div>
+        <Card className="animate-fade-in-up" padded={false}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+            <div><h2 className="font-semibold text-ink">Users by state and country</h2><p className="mt-1 text-xs text-muted">Aggregated from locations users chose to add to their profiles.</p></div>
+            <Badge variant="secondary">{locations.length} regions</Badge>
+          </div>
+          {locations.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px] text-left text-xs">
+                <thead className="bg-panel2 text-[10px] uppercase tracking-wide text-muted"><tr><th className="px-5 py-3 font-semibold">State or region</th><th className="px-4 py-3 font-semibold">Country</th><th className="px-5 py-3 text-right font-semibold">Users</th></tr></thead>
+                <tbody className="divide-y divide-line">{locations.map((entry) => (
+                  <tr key={`${entry.country}-${entry.state}`} className="transition-colors hover:bg-panel2/60">
+                    <td className="px-5 py-3 font-medium text-ink">{entry.state}</td>
+                    <td className="px-4 py-3 text-muted">{entry.country}</td>
+                    <td className="px-5 py-3 text-right font-semibold tabular-nums text-ink">{Number(entry.user_count).toLocaleString()}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          ) : <div className="px-5 py-12 text-center"><Globe2 size={28} className="mx-auto mb-2 text-muted/60" /><p className="text-sm font-medium text-ink">No user accounts yet</p><p className="mt-1 text-xs text-muted">Location totals will appear as users create accounts and update their profiles.</p></div>}
+          <p className="border-t border-line px-5 py-3 text-[11px] text-muted">Users who haven’t added a state or country are grouped as “Not specified.”</p>
         </Card>
       </>}
 

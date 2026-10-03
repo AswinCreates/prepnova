@@ -35,6 +35,8 @@ export function sanitizeUser(row) {
     headline: row.headline || '',
     experienceLevel: row.experience_level || '',
     location: row.location || '',
+    state: row.state || '',
+    country: row.country || '',
     targetRole: row.target_role || '',
     bio: row.bio || '',
     linkedinUrl: row.linkedin_url || '',

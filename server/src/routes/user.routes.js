@@ -13,6 +13,8 @@ const updateSchema = z.object({
   headline: z.string().trim().max(160).nullable().optional(),
   experienceLevel: z.enum(['Student', 'Entry level', 'Mid-level', 'Senior']).or(z.literal('')).nullable().optional(),
   location: z.string().trim().max(120).nullable().optional(),
+  state: z.string().trim().max(120).nullable().optional(),
+  country: z.string().trim().max(120).nullable().optional(),
   targetRole: z.string().trim().max(160).nullable().optional(),
   bio: z.string().trim().max(1200).nullable().optional(),
   linkedinUrl: z.string().trim().max(300).refine((value) => !value || /^https?:\/\//i.test(value), 'Use a valid http or https URL').nullable().optional(),

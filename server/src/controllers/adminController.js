@@ -4,7 +4,7 @@ import { sanitizeUser } from '../middleware/auth.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 export async function getAdminDashboard(_req, res) {
-  const [summary, trend, recentUsers, recentLogins, leaderboardStatus] = await Promise.all([
+  const [summary, trend, recentUsers, recentLogins, leaderboardStatus, locations, locationSummary] = await Promise.all([
     pool.query(
       `SELECT
          COUNT(*) FILTER (WHERE role = 'user')::int AS total_users,
@@ -54,6 +54,21 @@ export async function getAdminDashboard(_req, res) {
     pool.query(
       `SELECT reset_at FROM leaderboard_control WHERE id = 1`
     ),
+    pool.query(
+      `SELECT COALESCE(NULLIF(BTRIM(state), ''), 'Not specified') AS state,
+              COALESCE(NULLIF(BTRIM(country), ''), 'Not specified') AS country,
+              COUNT(*)::int AS user_count
+       FROM users
+       WHERE role = 'user'
+       GROUP BY 1, 2
+       ORDER BY COUNT(*) DESC, country ASC, state ASC
+       LIMIT 200`
+    ),
+    pool.query(
+      `SELECT COUNT(*) FILTER (WHERE NULLIF(BTRIM(state), '') IS NOT NULL OR NULLIF(BTRIM(country), '') IS NOT NULL)::int AS users_with_location,
+              COUNT(DISTINCT LOWER(BTRIM(country))) FILTER (WHERE NULLIF(BTRIM(country), '') IS NOT NULL)::int AS countries
+       FROM users WHERE role = 'user'`
+    ),
   ])
 
   const [counts] = summary.rows
@@ -76,6 +91,8 @@ export async function getAdminDashboard(_req, res) {
     recentUsers: recentUsers.rows,
     recentLogins: recentLogins.rows,
     leaderboardResetAt: leaderboardStatus.rows[0]?.reset_at ?? null,
+    locations: locations.rows,
+    locationSummary: locationSummary.rows[0],
   })
 }
 
@@ -163,7 +180,7 @@ export async function createAdmin(req, res) {
       `INSERT INTO users (name, email, password_hash, role)
        VALUES ($1, $2, $3, 'admin')
        RETURNING id, name, email, preferred_domain, target_skills, headline,
-                 experience_level, location, target_role, bio, linkedin_url,
+                 experience_level, location, state, country, target_role, bio, linkedin_url,
                  portfolio_url, role, login_count, last_login_at, created_at`,
       [name.trim(), normalizedEmail, passwordHash]
     )
