@@ -38,7 +38,7 @@ export async function createInterview(req, res) {
   } = req.body
 
   const { rows: compulsoryQuestions } = await pool.query(
-    `SELECT id, question_text, category, difficulty, domain
+    `SELECT id, question_text, category, difficulty, domain, question_type, options
      FROM questions WHERE is_compulsory = true ORDER BY id`
   )
   if (compulsoryQuestions.length > questionCount) {
@@ -47,7 +47,7 @@ export async function createInterview(req, res) {
 
   const optionalCount = questionCount - compulsoryQuestions.length
   const { rows: candidates } = await pool.query(
-    `SELECT id, question_text, category, difficulty, domain
+    `SELECT id, question_text, category, difficulty, domain, question_type, options
      FROM questions
      WHERE is_compulsory = false AND mode IN ($1, 'Both')
      ORDER BY (domain = $2) DESC, RANDOM()`,
@@ -92,7 +92,7 @@ export async function createInterview(req, res) {
       targetRole: interview.target_role,
       questionCount: selected.length,
       status: interview.status,
-      questions: selected.map((q) => ({ id: q.id, question_text: q.question_text, category: q.category })),
+      questions: selected.map((q) => ({ id: q.id, question_text: q.question_text, category: q.category, question_type: q.question_type, options: q.options })),
     })
   } catch (err) {
     await client.query('ROLLBACK')
@@ -109,7 +109,7 @@ async function fetchInterview(userId, interviewId) {
   assertOwns(interview)
 
   const { rows: questionRows } = await pool.query(
-    `SELECT a.question_id AS id, q.question_text, q.category,
+    `SELECT a.question_id AS id, q.question_text, q.category, q.question_type, q.options,
             a.answer_text, a.answer_mode, a.time_taken_seconds
      FROM answers a
      JOIN questions q ON q.id = a.question_id
@@ -133,6 +133,8 @@ async function fetchInterview(userId, interviewId) {
       id: q.id,
       question_text: q.question_text,
       category: q.category,
+      question_type: q.question_type,
+      options: q.options,
       answer: q.answer_text
         ? { answer_text: q.answer_text, answer_mode: q.answer_mode, time_taken_seconds: q.time_taken_seconds }
         : null,
@@ -204,7 +206,8 @@ export async function completeInterview(req, res) {
 
     // Evaluate the full interview, including skipped questions. Skips receive 0.
     const { rows: questionRows } = await client.query(
-      `SELECT a.question_id AS id, a.answer_text, q.question_text, q.sample_answer
+      `SELECT a.question_id AS id, a.answer_text, q.question_text, q.sample_answer,
+              q.question_type, q.options, q.correct_option_index
        FROM answers a
        JOIN questions q ON q.id = a.question_id
        WHERE a.interview_id = $1
@@ -227,6 +230,27 @@ export async function completeInterview(req, res) {
       answers: candidateAnswers,
       context: { targetRole: interview.target_role, jobDescription: interview.job_description },
     })
+
+    const questionEvaluationById = new Map(evaluation.questionEvaluations.map((item) => [String(item.questionId), item]))
+    for (const row of questionRows.filter((item) => item.question_type === 'mcq')) {
+      const questionEvaluation = questionEvaluationById.get(String(row.id))
+      if (!questionEvaluation) continue
+      const choices = Array.isArray(row.options) ? row.options : []
+      const correctAnswer = choices[row.correct_option_index]
+      const answered = Boolean(String(row.answer_text || '').trim())
+      const correct = answered && String(row.answer_text) === String(correctAnswer)
+      questionEvaluation.score = correct ? 10 : 0
+      questionEvaluation.feedback = !answered
+        ? 'No answer was selected. This question counts as 0.'
+        : correct
+          ? 'Correct answer.'
+          : `Incorrect. Correct answer: ${correctAnswer || 'unavailable'}. ${row.sample_answer || ''}`.trim()
+      questionEvaluation.strengths = correct ? ['Correct option selected.'] : []
+      questionEvaluation.improvements = correct ? [] : ['Review the correct answer and the concept behind it.']
+    }
+    evaluation.overallScore = evaluation.questionEvaluations.length
+      ? Math.round(evaluation.questionEvaluations.reduce((sum, item) => sum + item.score, 0) / (evaluation.questionEvaluations.length * 10) * 100)
+      : 0
 
     await client.query(
       `INSERT INTO evaluations
@@ -304,7 +328,8 @@ export async function interviewResults(req, res) {
 
   // Question texts so the client can render per-question breakdowns.
   const { rows: questionRows } = await pool.query(
-    `SELECT a.question_id AS id, q.question_text, a.answer_text, a.answer_mode, a.time_taken_seconds
+    `SELECT a.question_id AS id, q.question_text, q.question_type, q.options,
+            a.answer_text, a.answer_mode, a.time_taken_seconds
      FROM answers a
      JOIN questions q ON q.id = a.question_id
      WHERE a.interview_id = $1
@@ -374,6 +399,9 @@ export async function interviewResults(req, res) {
       completedAt: interview.completed_at,
       questions: questionRows.map((question) => ({
         ...question,
+        answer_text: question.question_type === 'mcq' && question.answer_text
+          ? question.answer_text
+          : question.answer_text,
         answer: question.answer_text
           ? { answer_text: question.answer_text, answer_mode: question.answer_mode, time_taken_seconds: question.time_taken_seconds }
           : null,

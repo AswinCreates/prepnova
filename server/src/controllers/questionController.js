@@ -19,7 +19,8 @@ export async function getQuestionPool(req, res) {
   }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
   const { rows } = await pool.query(
-    `SELECT id, mode, domain, difficulty, question_text, category, is_compulsory
+    `SELECT id, mode, domain, difficulty, question_text, category, is_compulsory,
+            question_type, options
      FROM questions ${where} ORDER BY id`
   , params)
   res.json({ questions: rows, compulsoryCount: rows.filter((question) => question.is_compulsory).length })

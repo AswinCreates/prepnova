@@ -71,7 +71,7 @@ export default function InterviewResults() {
   const overallScore = evaluation.overallScore
   const totalQuestions = evaluation.totalQuestions ?? interview.questions?.length ?? 0
   const answeredCount = evaluation.answeredCount ?? interview.questions?.filter((question) => question.answer?.answer_text?.trim()).length ?? 0
-  const qTextById = new Map((interview.questions || []).map((q) => [String(q.id), q.question_text]))
+  const questionById = new Map((interview.questions || []).map((q) => [String(q.id), q]))
   const questionEvaluations = evaluation.questionEvaluations || []
   const retryCount = questionEvaluations.filter((question) => Number(question.score) < 7).length || Math.min(3, questionEvaluations.length)
 
@@ -207,12 +207,13 @@ export default function InterviewResults() {
             <Card key={e.questionId} hover className="animate-fade-in-up">
               <div className="flex justify-between items-start mb-2">
                 <p className="font-medium text-ink">
-                  Q{e.questionNumber}: {qTextById.get(String(e.questionId)) || 'Question'}
+                  Q{e.questionNumber}: {questionById.get(String(e.questionId))?.question_text || 'Question'}
                 </p>
                 <Badge variant={e.score >= 8 ? 'success' : e.score >= 6 ? 'warning' : 'danger'}>
                   {e.score}/10
                 </Badge>
               </div>
+              {questionById.get(String(e.questionId))?.question_type === 'mcq' && <p className="mb-2 rounded-lg bg-panel2 px-3 py-2 text-xs text-muted">Your answer: <span className="font-medium text-ink">{questionById.get(String(e.questionId))?.answer?.answer_text || 'No answer selected'}</span></p>}
               <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-panel2">
                 <div
                   className={`h-full bg-gradient-to-r ${

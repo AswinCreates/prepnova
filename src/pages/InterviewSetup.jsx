@@ -5,22 +5,23 @@ import api from '../services/api'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import PageHeader from '../components/PageHeader'
-import { BriefcaseBusiness, FileText, Sparkles } from 'lucide-react'
+import { INTERVIEW_DOMAINS } from '../constants/interviewDomains'
+import { Code2, ListChecks, UsersRound } from 'lucide-react'
 
-const DOMAINS = ['Web Development', 'Data Science', 'DSA', 'System Design', 'HR / Behavioral']
 const DIFFICULTIES = [
   { level: 'Easy', dot: 'bg-success' },
   { level: 'Medium', dot: 'bg-warning' },
   { level: 'Hard', dot: 'bg-danger' },
 ]
-const MODES = ['Technical', 'HR']
+const MODES = [
+  { value: 'Technical', label: 'Technical', description: 'Practice role-specific technical skills.', Icon: Code2 },
+  { value: 'HR', label: 'HR', description: 'Practice behavioral and workplace scenarios.', Icon: UsersRound },
+]
 
 export default function InterviewSetup() {
   const [domain, setDomain] = useState('')
   const [difficulty, setDifficulty] = useState('')
   const [mode, setMode] = useState('')
-  const [targetRole, setTargetRole] = useState('')
-  const [jobDescription, setJobDescription] = useState('')
   const [questionCount, setQuestionCount] = useState(5)
   const [compulsoryCount, setCompulsoryCount] = useState(3)
   const [loading, setLoading] = useState(false)
@@ -36,19 +37,12 @@ export default function InterviewSetup() {
       .catch(() => toast.error('Could not load the required interview questions'))
   }, [])
 
-  const canContinue = domain && difficulty && mode
+  const canContinue = Boolean(mode && domain && difficulty)
 
   const handleContinue = async () => {
     setLoading(true)
     try {
-      const { data } = await api.post('/interviews', {
-        mode,
-        domain,
-        difficulty,
-        targetRole: targetRole.trim(),
-        jobDescription: jobDescription.trim(),
-        questionCount,
-      })
+      const { data } = await api.post('/interviews', { mode, domain, difficulty, questionCount })
       navigate(`/interview/start/${data.interviewId}`)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to start interview')
@@ -60,107 +54,65 @@ export default function InterviewSetup() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        icon="🧩"
+        icon={<ListChecks size={20} />}
         title="Set up your mock interview"
-        subtitle="Choose a mode, domain, difficulty, and how many questions to answer"
+        subtitle="Choose your interview mode first, then select a matching domain and difficulty."
       />
 
       <Card className="animate-fade-in-up">
-        <div className="mb-7 rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
-          <div className="mb-4 flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles size={19} /></span>
-            <div>
-              <h2 className="font-semibold text-ink">Make it about your next role</h2>
-              <p className="mt-1 text-xs leading-relaxed text-muted">Add a target role or job description to focus your questions. AI feedback can use the same context to make its notes more relevant. Both are optional.</p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-xs font-medium text-ink">
-              <span className="flex items-center gap-1.5"><BriefcaseBusiness size={14} className="text-primary" /> Target role</span>
-              <input
-                value={targetRole}
-                onChange={(event) => setTargetRole(event.target.value)}
-                maxLength={160}
-                placeholder="e.g. Senior frontend engineer"
-                className="w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5 text-xs font-medium text-ink sm:col-span-2">
-              <span className="flex items-center gap-1.5"><FileText size={14} className="text-primary" /> Job description <span className="font-normal text-muted">(optional)</span></span>
-              <textarea
-                value={jobDescription}
-                onChange={(event) => setJobDescription(event.target.value)}
-                maxLength={8000}
-                rows={3}
-                placeholder="Paste the responsibilities and skills you want to practice for..."
-                className="w-full resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm leading-relaxed text-ink placeholder:text-muted/70 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-              <span className="self-end text-[10px] font-normal text-muted">{jobDescription.length}/8,000</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="mb-7">
-          <h2 className="mb-2 text-sm font-semibold text-ink">Interview Mode</h2>
-          <div className="flex flex-wrap gap-2">
-            {MODES.map((m) => (
+        <section className="mb-7">
+          <h2 className="mb-1 text-sm font-semibold text-ink">1. Choose interview mode</h2>
+          <p className="mb-3 text-xs text-muted">Start with the kind of interview you want to practice.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {MODES.map(({ value, label, description, Icon }) => (
               <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`rounded-xl border px-5 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 ${
-                  mode === m
-                    ? 'border-primary bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/25'
-                    : 'border-line bg-panel2 text-muted hover:border-primary/50 hover:text-ink'
-                }`}
+                key={value}
+                type="button"
+                onClick={() => { setMode(value); setDomain('') }}
+                aria-pressed={mode === value}
+                className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all duration-200 active:scale-[0.99] ${mode === value ? 'border-primary bg-primary/5 ring-2 ring-primary/15' : 'border-line bg-panel hover:border-primary/40 hover:bg-panel2'}`}
               >
-                {m}
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${mode === value ? 'bg-primary text-white' : 'bg-panel2 text-muted'}`}><Icon size={19} /></span>
+                <span><span className="block text-sm font-semibold text-ink">{label}</span><span className="mt-1 block text-xs leading-relaxed text-muted">{description}</span></span>
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
         <div className="mb-7">
-          <h2 className="mb-2 text-sm font-semibold text-ink">Domain</h2>
-          <div className="flex flex-wrap gap-2">
-            {DOMAINS.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDomain(d)}
-                className={`rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 ${
-                  domain === d
-                    ? 'border-secondary bg-gradient-to-r from-secondary to-emerald-500 text-white shadow-lg shadow-secondary/25'
-                    : 'border-line bg-panel2 text-muted hover:border-secondary/50 hover:text-ink'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
+          <label htmlFor="interview-domain" className="mb-2 block text-sm font-semibold text-ink">2. Select a {mode === 'HR' ? 'HR' : 'technical'} domain</label>
+          <select
+            id="interview-domain"
+            value={domain}
+            onChange={(event) => setDomain(event.target.value)}
+            disabled={!mode}
+            className="w-full rounded-xl border border-line bg-panel px-3 py-3 text-sm text-ink outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-lg"
+          >
+            <option value="">{mode ? 'Choose a domain' : 'Choose a mode first'}</option>
+            {mode && INTERVIEW_DOMAINS[mode].map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <p className="mt-2 text-xs text-muted">Questions will focus on the selected domain.</p>
         </div>
 
         <div className="mb-8">
-          <h2 className="mb-2 text-sm font-semibold text-ink">Difficulty</h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink">3. Difficulty</h2>
           <div className="flex flex-wrap gap-2">
             {DIFFICULTIES.map(({ level, dot }) => (
               <button
                 key={level}
+                type="button"
                 onClick={() => setDifficulty(level)}
                 aria-pressed={difficulty === level}
-                className={`rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 ${
-                  difficulty === level
-                    ? 'border-primary bg-primary/10 text-primary dark:text-indigo-300'
-                    : 'border-line bg-panel2 text-muted hover:border-primary/50 hover:text-ink'
-                }`}
+                className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95 ${difficulty === level ? 'border-primary bg-primary/10 text-primary dark:text-primary' : 'border-line bg-panel2 text-muted hover:border-primary/50 hover:text-ink'}`}
               >
-                <span className={`mr-2 inline-block h-2 w-2 rounded-full align-middle ${dot}`} />
-                {level}
+                <span className={`mr-2 inline-block h-2 w-2 rounded-full align-middle ${dot}`} />{level}
               </button>
             ))}
           </div>
         </div>
 
         <div className="mb-8">
-          <label htmlFor="question-count" className="mb-2 block text-sm font-semibold text-ink">Number of questions</label>
+          <label htmlFor="question-count" className="mb-2 block text-sm font-semibold text-ink">4. Number of questions</label>
           <select
             id="question-count"
             value={questionCount}
@@ -182,7 +134,7 @@ export default function InterviewSetup() {
         </div>
 
         <Button disabled={!canContinue} onClick={handleContinue} loading={loading} className="w-full" size="lg">
-          Continue →
+          Start interview
         </Button>
       </Card>
     </div>

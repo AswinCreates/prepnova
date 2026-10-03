@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 import { Activity, CalendarDays, Clock3, Globe2, HelpCircle, LayoutDashboard, MapPin, MessagesSquare, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
 import AdminTicketsPanel from './AdminTicketsPanel'
+import { INTERVIEW_DOMAINS } from '../constants/interviewDomains'
 
 function dateTime(value) {
   if (!value) return 'Never'
@@ -45,10 +46,10 @@ function ActivityTooltip({ active, payload }) {
 
 const initialAdminForm = { name: '', email: '', password: '' }
 const initialQuestionForm = {
-  mode: 'Technical', domain: 'Web Development', difficulty: 'Medium',
+  mode: 'Technical', domain: 'Frontend Development', difficulty: 'Medium',
   questionText: '', category: '', sampleAnswer: '', isCompulsory: false,
+  questionType: 'written', optionsText: '', correctOptionIndex: '0',
 }
-const QUESTION_DOMAINS = ['General', 'Web Development', 'Data Science', 'DSA', 'System Design', 'HR / Behavioral']
 
 export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -142,6 +143,9 @@ export default function AdminDashboard() {
       if (name === 'isCompulsory' && checked) {
         return { ...current, isCompulsory: true, mode: 'Both', domain: 'General' }
       }
+      if (name === 'mode' && value !== 'Both') {
+        return { ...current, mode: value, domain: INTERVIEW_DOMAINS[value][0], isCompulsory: false }
+      }
       return { ...current, [name]: type === 'checkbox' ? checked : value }
     })
   }
@@ -165,7 +169,12 @@ export default function AdminDashboard() {
     event.preventDefault()
     setAddingQuestion(true)
     try {
-      await api.post('/admin/questions', questionForm)
+      const options = questionForm.optionsText.split('\n').map((option) => option.trim()).filter(Boolean)
+      await api.post('/admin/questions', {
+        ...questionForm,
+        options,
+        correctOptionIndex: questionForm.questionType === 'mcq' ? Number(questionForm.correctOptionIndex) : null,
+      })
       setQuestionForm(initialQuestionForm)
       await loadDashboard()
       toast.success('Interview question added')
@@ -236,7 +245,7 @@ export default function AdminDashboard() {
         )}
       />
 
-      <nav aria-label="Admin console sections" className="flex gap-1 overflow-x-auto rounded-2xl border border-line bg-panel p-1.5">
+      <nav aria-label="Admin console sections" className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-panel p-2 sm:grid-cols-3">
         {[
           { id: 'overview', label: 'Overview', Icon: LayoutDashboard },
           { id: 'administration', label: 'Administration', Icon: ShieldCheck },
@@ -253,9 +262,9 @@ export default function AdminDashboard() {
               setSearchParams({ section: id }, { replace: true })
             }}
             aria-current={activeSection === id ? 'page' : undefined}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors sm:px-4 sm:text-sm ${activeSection === id ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-panel2 hover:text-ink'}`}
+            className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${activeSection === id ? 'bg-primary text-white shadow-sm' : 'text-muted hover:bg-panel2 hover:text-ink'}`}
           >
-            <Icon size={16} />{label}
+            <Icon size={18} />{label}
           </button>
         ))}
       </nav>
@@ -375,7 +384,10 @@ export default function AdminDashboard() {
                 <select name="mode" value={questionForm.mode} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink"><option>Technical</option><option>HR</option><option>Both</option></select>
               </label>
               <label className="block text-xs font-medium text-ink">Domain
-                <select name="domain" value={questionForm.domain} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink">{QUESTION_DOMAINS.map((domain) => <option key={domain}>{domain}</option>)}</select>
+                <select name="domain" value={questionForm.domain} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink">{(questionForm.mode === 'Both' ? ['General', ...INTERVIEW_DOMAINS.Technical, ...INTERVIEW_DOMAINS.HR] : INTERVIEW_DOMAINS[questionForm.mode]).map((domain) => <option key={domain}>{domain}</option>)}</select>
+              </label>
+              <label className="block text-xs font-medium text-ink">Question format
+                <select name="questionType" value={questionForm.questionType} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink"><option value="written">Written answer</option><option value="mcq">Multiple choice (MCQ)</option></select>
               </label>
               <label className="block text-xs font-medium text-ink">Difficulty
                 <select name="difficulty" value={questionForm.difficulty} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink"><option>Easy</option><option>Medium</option><option>Hard</option></select>
@@ -384,6 +396,16 @@ export default function AdminDashboard() {
                 <input name="category" value={questionForm.category} onChange={updateQuestionForm} maxLength={80} placeholder="e.g. Communication" className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none focus:border-primary/60" />
               </label>
             </div>
+            {questionForm.questionType === 'mcq' && <div className="space-y-3 rounded-xl border border-line bg-panel2/50 p-3">
+              <label className="block text-xs font-medium text-ink">Answer options <span className="font-normal text-muted">(enter four options, one per line)</span>
+                <textarea name="optionsText" value={questionForm.optionsText} onChange={updateQuestionForm} rows={4} required placeholder={'Option A\nOption B\nOption C\nOption D'} className="mt-1.5 w-full resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none focus:border-primary/60" />
+              </label>
+              <label className="block text-xs font-medium text-ink">Correct option
+                <select name="correctOptionIndex" value={questionForm.correctOptionIndex} onChange={updateQuestionForm} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink">
+                  {questionForm.optionsText.split('\n').map((option) => option.trim()).filter(Boolean).map((option, index) => <option key={`${index}-${option}`} value={index}>{String.fromCharCode(65 + index)}. {option}</option>)}
+                </select>
+              </label>
+            </div>}
             <label className="block text-xs font-medium text-ink">Sample answer guidance <span className="font-normal text-muted">(optional)</span>
               <textarea name="sampleAnswer" value={questionForm.sampleAnswer} onChange={updateQuestionForm} maxLength={3000} rows={2} placeholder="Key points to look for when evaluating an answer" className="mt-1.5 w-full resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none focus:border-primary/60" />
             </label>
@@ -404,7 +426,8 @@ export default function AdminDashboard() {
                 <div key={question.id} className="flex items-start justify-between gap-3 p-3.5">
                   <div className="min-w-0">
                     <p className="text-sm font-medium leading-relaxed text-ink">{question.question_text}</p>
-                    <p className="mt-1 text-[11px] text-muted">{question.mode} · {question.domain} · {question.difficulty}{question.category ? ` · ${question.category}` : ''}</p>
+                    <p className="mt-1 text-[11px] text-muted">{question.mode} · {question.domain} · {question.difficulty} · {question.question_type === 'mcq' ? 'MCQ' : 'Written'}{question.category ? ` · ${question.category}` : ''}</p>
+                    {question.question_type === 'mcq' && <p className="mt-1 text-[11px] font-medium text-success">Correct answer: {question.options?.[question.correct_option_index] || 'Not set'}</p>}
                   </div>
                   {question.is_compulsory && <Badge variant="primary">Required</Badge>}
                 </div>
@@ -499,6 +522,7 @@ export default function AdminDashboard() {
         {leaderboardCount > leaderboard.length && <p className="border-t border-line px-5 py-3 text-center text-xs text-muted">Showing the top 50 candidates.</p>}
       </Card>
       </>}
+
     </div>
   )
 }

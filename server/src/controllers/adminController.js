@@ -130,7 +130,8 @@ export async function listAccounts(_req, res) {
 
 export async function listQuestions(_req, res) {
   const { rows } = await pool.query(
-    `SELECT id, mode, domain, difficulty, question_text, category, is_compulsory
+    `SELECT id, mode, domain, difficulty, question_text, category, is_compulsory,
+            question_type, options, correct_option_index
      FROM questions
      ORDER BY is_compulsory DESC, id DESC
      LIMIT 250`
@@ -141,7 +142,8 @@ export async function listQuestions(_req, res) {
 export async function createQuestion(req, res) {
   const {
     mode, domain, difficulty, questionText, category = '',
-    sampleAnswer = '', isCompulsory = false,
+    sampleAnswer = '', isCompulsory = false, questionType = 'written',
+    options = [], correctOptionIndex = null,
   } = req.body
 
   if (isCompulsory) {
@@ -154,10 +156,12 @@ export async function createQuestion(req, res) {
   try {
     const { rows: [question] } = await pool.query(
       `INSERT INTO questions
-        (mode, domain, difficulty, question_text, category, sample_answer, is_compulsory)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, mode, domain, difficulty, question_text, category, is_compulsory`,
-      [isCompulsory ? 'Both' : mode, isCompulsory ? 'General' : domain, difficulty, questionText.trim(), category.trim(), sampleAnswer.trim(), isCompulsory]
+        (mode, domain, difficulty, question_text, category, sample_answer, is_compulsory,
+         question_type, options, correct_option_index)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, mode, domain, difficulty, question_text, category, is_compulsory,
+                 question_type, options, correct_option_index`,
+      [isCompulsory ? 'Both' : mode, isCompulsory ? 'General' : domain, difficulty, questionText.trim(), category.trim(), sampleAnswer.trim(), isCompulsory, questionType, JSON.stringify(questionType === 'mcq' ? options : []), questionType === 'mcq' ? correctOptionIndex : null]
     )
     res.status(201).json({ question })
   } catch (err) {

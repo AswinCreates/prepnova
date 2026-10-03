@@ -20,6 +20,14 @@ const createQuestionSchema = z.object({
   category: z.string().trim().max(80).default(''),
   sampleAnswer: z.string().trim().max(3000).default(''),
   isCompulsory: z.boolean().default(false),
+  questionType: z.enum(['written', 'mcq']).default('written'),
+  options: z.array(z.string().trim().min(1).max(300)).max(4).default([]),
+  correctOptionIndex: z.number().int().min(0).max(3).nullable().optional(),
+}).superRefine((question, context) => {
+  if (question.questionType === 'mcq') {
+    if (question.options.length !== 4) context.addIssue({ code: z.ZodIssueCode.custom, path: ['options'], message: 'MCQs need exactly four answer options' })
+    if (question.correctOptionIndex === null || typeof question.correctOptionIndex === 'undefined') context.addIssue({ code: z.ZodIssueCode.custom, path: ['correctOptionIndex'], message: 'Select the correct option' })
+  }
 })
 const ticketReplySchema = z.object({
   message: z.string().trim().min(1, 'Reply cannot be empty').max(5000),

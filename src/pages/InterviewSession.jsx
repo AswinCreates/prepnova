@@ -9,7 +9,7 @@ import Loader from '../components/Loader'
 import SpeechInterview from '../components/SpeechInterview'
 import { useTimer } from '../hooks/useTimer'
 import { getQuestionTimeLimit } from '../utils/interviewTiming'
-import { ClipboardCheck, MessageSquareText, Sparkles } from 'lucide-react'
+import { CheckCircle2, ClipboardCheck, MessageSquareText, Sparkles } from 'lucide-react'
 
 export default function InterviewSession() {
   const { id } = useParams()
@@ -181,6 +181,22 @@ export default function InterviewSession() {
             {current.question_text}
           </h2>
 
+          {current.question_type === 'mcq' ? (
+            <fieldset className="mt-5 space-y-2">
+              <legend className="mb-3 text-xs font-semibold text-muted">Choose one answer</legend>
+              {(current.options || []).map((option, index) => {
+                const selected = answer === option
+                return (
+                  <label key={`${current.id}-${index}`} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm transition-colors ${selected ? 'border-primary bg-primary/5 text-ink ring-2 ring-primary/15' : 'border-line bg-panel text-ink hover:border-primary/40'}`}>
+                    <input type="radio" name={`answer-${current.id}`} checked={selected} onChange={() => { setAnswer(option); setAnswerMode('typed') }} className="h-4 w-4 accent-primary" />
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-panel2 text-[11px] font-semibold text-muted">{String.fromCharCode(65 + index)}</span>
+                    <span className="flex-1">{option}</span>
+                    {selected && <CheckCircle2 size={16} className="text-primary" />}
+                  </label>
+                )
+              })}
+            </fieldset>
+          ) : <>
           {/* Typed / Voice toggle */}
           <div className="mb-4 mt-4 inline-flex rounded-xl border border-line bg-panel2 p-1">
             <button
@@ -218,6 +234,7 @@ export default function InterviewSession() {
               className="w-full resize-none rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60"
             />
           )}
+          </>}
 
           {answerMode === 'voice' && answer.trim() ? (
             <p className="mt-3 text-xs text-muted animate-fade-in">

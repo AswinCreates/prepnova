@@ -16,7 +16,7 @@ const router = Router()
 router.use(auth)
 
 const createSchema = z.object({
-  mode: z.string().min(1, 'Mode is required'),
+  mode: z.enum(['Technical', 'HR']),
   domain: z.string().min(1, 'Domain is required'),
   difficulty: z.string().min(1, 'Difficulty is required'),
   questionCount: z.number().int().min(5).max(20).default(5),
