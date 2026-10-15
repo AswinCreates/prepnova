@@ -11,6 +11,7 @@ import {
 } from '../controllers/interviewController.js'
 import { auth } from '../middleware/auth.js'
 import { asyncHandler, validate } from '../utils/validate.js'
+import { transcribeAudio } from '../services/audioTranscriptionService.js'
 
 const router = Router()
 router.use(auth)
@@ -37,6 +38,18 @@ const answersSchema = z.object({
 
 // History must be declared BEFORE the :id route so Express matches it.
 router.get('/history', asyncHandler(interviewHistory))
+
+router.post('/transcribe', asyncHandler(async (req, res) => {
+  const { audio, mimeType } = req.body || {}
+  if (typeof audio !== 'string' || !audio || audio.length > 9_000_000) {
+    return res.status(400).json({ message: 'Audio recording is missing or too large. Please record a shorter answer.' })
+  }
+  if (!['audio/webm', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/mp4;codecs=mp4a.40.2'].includes(mimeType)) {
+    return res.status(400).json({ message: 'This audio format is not supported. Please use Chrome or Edge.' })
+  }
+  const text = await transcribeAudio(audio, mimeType.split(';')[0])
+  res.json({ transcript: text })
+}))
 
 router.post('/', validate(createSchema), asyncHandler(createInterview))
 router.get('/:id', asyncHandler(getInterviewById))
