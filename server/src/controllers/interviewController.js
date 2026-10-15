@@ -228,7 +228,13 @@ export async function completeInterview(req, res) {
     const evaluation = await evaluateInterview({
       questions,
       answers: candidateAnswers,
-      context: { targetRole: interview.target_role, jobDescription: interview.job_description },
+      context: {
+        mode: interview.mode,
+        domain: interview.domain,
+        difficulty: interview.difficulty,
+        targetRole: interview.target_role,
+        jobDescription: interview.job_description,
+      },
     })
 
     const questionEvaluationById = new Map(evaluation.questionEvaluations.map((item) => [String(item.questionId), item]))

@@ -94,19 +94,22 @@ Open the printed Vite URL (default http://localhost:5173).
 
 ## AI Evaluation Configuration
 
-The backend supports any OpenAI-compatible provider plus Gemini and Anthropic. Configure
-in `server/.env`:
+The backend supports OpenAI-compatible endpoints, Gemini, and Anthropic. Copy
+`server/.env.example` to `server/.env` and set the provider and its API key:
 
 ```
 AI_PROVIDER=openai          # openai | gemini | anthropic
-AI_MODEL=gpt-4o-mini
-AI_API_KEY=your-key         # leave empty to use the built-in deterministic evaluator
-AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini        # optional; defaults are provider-specific
+AI_API_KEY=your-provider-key
 AI_TIMEOUT_MS=30000
 ```
 
 - The evaluation service asks the model for strict JSON, validates + sanitizes it, and
   stores results in the `evaluations` table.
+- Evaluations use the selected interview mode and domain. The coaching rubric checks
+  technical reasoning for technical interviews and relevance, ownership, reflection,
+  and evidence for HR interviews. MCQ answers are graded deterministically.
+- Keep the API key in `server/.env`; never put it in a `VITE_` variable or frontend code.
 - If the AI call fails (no key, rate limit, timeout, malformed output), it **safely falls
   back** to a deterministic rule-based evaluator (never randomized), and the results page
   labels which source was used.
