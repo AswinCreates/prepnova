@@ -12,7 +12,10 @@ export function notFound(req, res) {
 }
 
 export function errorHandler(err, req, res, _next) {
-  const status = err.statusCode || 500
+  const status = err.statusCode || err.status || 500
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ message: 'Audio upload is too large. Please record a shorter answer and try again.' })
+  }
   if (status >= 500) console.error('Unhandled error:', err)
   res.status(status).json({ message: err.message || 'Internal server error' })
 }

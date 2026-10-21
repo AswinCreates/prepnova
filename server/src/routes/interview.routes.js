@@ -8,10 +8,12 @@ import {
   interviewHistory,
   interviewResults,
   retryWeakQuestions,
+  recordTabSwitch,
 } from '../controllers/interviewController.js'
 import { auth } from '../middleware/auth.js'
 import { asyncHandler, validate } from '../utils/validate.js'
 import { transcribeAudio } from '../services/audioTranscriptionService.js'
+import pool from '../config/db.js'
 
 const router = Router()
 router.use(auth)
@@ -36,22 +38,31 @@ const answersSchema = z.object({
   ),
 })
 
+const tabSwitchSchema = z.object({
+  questionId: z.number().int().optional(),
+  answerText: z.string().max(20000).default(''),
+  answerMode: z.enum(['typed', 'voice']).default('typed'),
+  timeTakenSeconds: z.number().int().nonnegative().default(0),
+})
+
 // History must be declared BEFORE the :id route so Express matches it.
 router.get('/history', asyncHandler(interviewHistory))
 
 router.post('/transcribe', asyncHandler(async (req, res) => {
   const { audio, mimeType } = req.body || {}
-  if (typeof audio !== 'string' || !audio || audio.length > 9_000_000) {
+  if (typeof audio !== 'string' || !audio || audio.length > 19_000_000) {
     return res.status(400).json({ message: 'Audio recording is missing or too large. Please record a shorter answer.' })
   }
   if (!['audio/webm', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/mp4;codecs=mp4a.40.2'].includes(mimeType)) {
     return res.status(400).json({ message: 'This audio format is not supported. Please use Chrome or Edge.' })
   }
-  const text = await transcribeAudio(audio, mimeType.split(';')[0])
+  const { rows } = await pool.query('SELECT name FROM users WHERE id = $1', [req.userId])
+  const text = await transcribeAudio(audio, mimeType.split(';')[0], rows[0]?.name || '')
   res.json({ transcript: text })
 }))
 
 router.post('/', validate(createSchema), asyncHandler(createInterview))
+router.post('/:id/tab-switch', validate(tabSwitchSchema), asyncHandler(recordTabSwitch))
 router.get('/:id', asyncHandler(getInterviewById))
 router.post('/:id/answers', validate(answersSchema), asyncHandler(saveAnswers))
 router.post('/:id/complete', asyncHandler(completeInterview))

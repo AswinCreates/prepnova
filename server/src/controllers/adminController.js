@@ -4,7 +4,7 @@ import { sanitizeUser } from '../middleware/auth.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 export async function getAdminDashboard(_req, res) {
-  const [summary, trend, recentUsers, recentLogins, leaderboardStatus, locations, locationSummary] = await Promise.all([
+  const [summary, trend, recentUsers, recentLogins, leaderboardStatus, locations, locationSummary, interviewSummary, evaluationBands] = await Promise.all([
     pool.query(
       `SELECT
          COUNT(*) FILTER (WHERE role = 'user')::int AS total_users,
@@ -69,6 +69,42 @@ export async function getAdminDashboard(_req, res) {
               COUNT(DISTINCT LOWER(BTRIM(country))) FILTER (WHERE NULLIF(BTRIM(country), '') IS NOT NULL)::int AS countries
        FROM users WHERE role = 'user'`
     ),
+    pool.query(
+      `SELECT COUNT(*)::int AS completed_interviews,
+              COUNT(DISTINCT user_id)::int AS candidates_interviewed,
+              COUNT(*) FILTER (WHERE score >= 60)::int AS passed_interviews,
+              COALESCE(ROUND(AVG(score)), 0)::int AS average_score
+       FROM (
+         SELECT i.user_id, COALESCE(e.overall_score, i.total_score)::int AS score
+         FROM interviews i
+         LEFT JOIN evaluations e ON e.interview_id = i.id
+         WHERE i.status = 'completed'
+       ) completed`
+    ),
+    pool.query(
+      `SELECT CASE
+                WHEN score < 40 THEN 'Needs improvement'
+                WHEN score < 60 THEN 'Developing'
+                WHEN score < 80 THEN 'Interview ready'
+                ELSE 'Excellent'
+              END AS label,
+              CASE
+                WHEN score < 40 THEN 1
+                WHEN score < 60 THEN 2
+                WHEN score < 80 THEN 3
+                ELSE 4
+              END AS sort_order,
+              COUNT(*)::int AS total
+       FROM (
+         SELECT COALESCE(e.overall_score, i.total_score)::int AS score
+         FROM interviews i
+         LEFT JOIN evaluations e ON e.interview_id = i.id
+         WHERE i.status = 'completed'
+           AND COALESCE(e.overall_score, i.total_score) IS NOT NULL
+       ) scored
+       GROUP BY label, sort_order
+       ORDER BY sort_order`
+    ),
   ])
 
   const [counts] = summary.rows
@@ -93,6 +129,8 @@ export async function getAdminDashboard(_req, res) {
     leaderboardResetAt: leaderboardStatus.rows[0]?.reset_at ?? null,
     locations: locations.rows,
     locationSummary: locationSummary.rows[0],
+    interviewStats: interviewSummary.rows[0],
+    evaluationBands: evaluationBands.rows,
   })
 }
 

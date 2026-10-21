@@ -10,9 +10,9 @@ import Badge from '../components/Badge'
 import PageHeader from '../components/PageHeader'
 import { useAuth } from '../context/AuthContext'
 import {
-  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Cell, Pie, PieChart, ResponsiveContainer, Tooltip,
 } from 'recharts'
-import { Activity, CalendarDays, Clock3, Globe2, HelpCircle, LayoutDashboard, MapPin, MessagesSquare, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
+import { Activity, CalendarDays, CheckCircle2, Clock3, ClipboardCheck, Globe2, HelpCircle, LayoutDashboard, MapPin, MessagesSquare, Plus, RefreshCw, RotateCcw, ShieldCheck, Target, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
 import AdminTicketsPanel from './AdminTicketsPanel'
 import { INTERVIEW_DOMAINS } from '../constants/interviewDomains'
 
@@ -34,12 +34,22 @@ function formatDuration(value) {
 
 function ActivityTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
-  const entry = payload[0].payload
+  const entry = payload[0]
   return (
     <div className="rounded-xl border border-line bg-panel px-3 py-2.5 shadow-lg">
-      <p className="mb-1 text-xs font-semibold text-ink">{entry.fullDate}</p>
-      <p className="text-xs text-primary">New accounts: {entry.newAccounts}</p>
-      <p className="mt-0.5 text-xs text-secondary">Successful logins: {entry.logins}</p>
+      <p className="text-xs font-semibold text-ink">{entry.name}</p>
+      <p className="mt-1 text-xs text-muted">{Number(entry.value).toLocaleString()} events in the last 30 days</p>
+    </div>
+  )
+}
+
+function EvaluationTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const entry = payload[0]
+  return (
+    <div className="rounded-xl border border-line bg-panel px-3 py-2.5 shadow-lg">
+      <p className="text-xs font-semibold text-ink">{entry.name}</p>
+      <p className="mt-1 text-xs text-muted">{Number(entry.value).toLocaleString()} completed interviews</p>
     </div>
   )
 }
@@ -57,6 +67,8 @@ export default function AdminDashboard() {
   const activeSection = ['overview', 'administration', 'questions', 'locations', 'tickets', 'leaderboard'].includes(requestedSection) ? requestedSection : 'overview'
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
+  const [interviewStats, setInterviewStats] = useState(null)
+  const [evaluationBands, setEvaluationBands] = useState([])
   const [accounts, setAccounts] = useState([])
   const [questions, setQuestions] = useState([])
   const [locations, setLocations] = useState([])
@@ -81,9 +93,17 @@ export default function AdminDashboard() {
         api.get('/admin/accounts'),
         api.get('/admin/questions'),
       ])
-      setStats({ ...dashboardResponse.data.stats, leaderboardResetAt: dashboardResponse.data.leaderboardResetAt })
+      setStats({
+        ...dashboardResponse.data.stats,
+        trend: dashboardResponse.data.trend || [],
+        recentUsers: dashboardResponse.data.recentUsers || [],
+        recentLogins: dashboardResponse.data.recentLogins || [],
+        leaderboardResetAt: dashboardResponse.data.leaderboardResetAt,
+      })
       setLocations(dashboardResponse.data.locations || [])
       setLocationSummary(dashboardResponse.data.locationSummary || null)
+      setInterviewStats(dashboardResponse.data.interviewStats || null)
+      setEvaluationBands(dashboardResponse.data.evaluationBands || [])
       setAccounts(accountsResponse.data.accounts || [])
       setQuestions(questionsResponse.data.questions || [])
       return dashboardResponse.data
@@ -132,9 +152,23 @@ export default function AdminDashboard() {
 
   const chartData = useMemo(() => (stats?.trend || []).map((item) => ({
     ...item,
+    newAccounts: Number(item.newAccounts ?? item.new_accounts ?? 0),
+    logins: Number(item.logins ?? 0),
     name: shortDate(item.day),
     fullDate: new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(new Date(`${item.day}T00:00:00`)),
   })), [stats])
+  const activityTotals = useMemo(() => [
+    { name: 'New accounts', value: chartData.reduce((total, item) => total + item.newAccounts, 0), color: '#176F68' },
+    { name: 'Successful logins', value: chartData.reduce((total, item) => total + item.logins, 0), color: '#4D8C7A' },
+  ].filter((item) => item.value > 0), [chartData])
+  const evaluationChartData = useMemo(() => {
+    const colors = ['#C47B54', '#B69A4B', '#4D8C7A', '#176F68']
+    return evaluationBands.map((item, index) => ({
+      name: item.label,
+      value: Number(item.total),
+      color: colors[index] || '#64748B',
+    })).filter((item) => item.value > 0)
+  }, [evaluationBands])
 
   const updateForm = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
   const updateQuestionForm = (event) => {
@@ -282,21 +316,53 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      <section aria-label="Interview outcomes" className="space-y-3">
+        <div><h2 className="font-semibold text-ink">Interview outcomes</h2><p className="mt-1 text-xs text-muted">Evaluation results for completed interviews. A score of 60% or higher counts as a pass.</p></div>
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {[
+            { label: 'Completed interviews', value: interviewStats?.completed_interviews ?? 0, note: 'Finished interview sessions', Icon: ClipboardCheck },
+            { label: 'Candidates interviewed', value: interviewStats?.candidates_interviewed ?? 0, note: 'Unique users with a completed interview', Icon: Users },
+            { label: 'Passed interviews', value: interviewStats?.passed_interviews ?? 0, note: 'Evaluation score of 60% or higher', Icon: CheckCircle2 },
+            { label: 'Average evaluation', value: `${interviewStats?.average_score ?? 0}%`, note: 'Average score across completed interviews', Icon: Target },
+          ].map(({ label, value, note, Icon }) => (
+            <Card key={label} className="animate-fade-in-up">
+              <div className="flex items-start justify-between gap-2"><div><p className="text-xs font-medium text-muted">{label}</p><p className="mt-2 text-2xl font-bold tabular-nums text-ink">{typeof value === 'number' ? value.toLocaleString() : value}</p></div><span className="grid h-9 w-9 place-items-center rounded-xl bg-secondary/10 text-secondary"><Icon size={18} /></span></div>
+              <p className="mt-3 text-[10px] text-muted">{note}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <Card className="animate-fade-in-up">
+        <div className="mb-3"><h2 className="font-semibold text-ink">Evaluation score distribution</h2><p className="mt-1 text-xs text-muted">Completed interview scores grouped by evaluation outcome.</p></div>
+        {evaluationChartData.length ? <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)]">
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie data={evaluationChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={94} paddingAngle={3} stroke="none">
+                {evaluationChartData.map((item) => <Cell key={item.name} fill={item.color} />)}
+              </Pie>
+              <Tooltip content={<EvaluationTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="space-y-3 pb-3">
+            {evaluationChartData.map((item) => <div key={item.name} className="flex items-center justify-between gap-3 text-xs"><span className="inline-flex items-center gap-2 text-muted"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span><strong className="tabular-nums text-ink">{item.value.toLocaleString()}</strong></div>)}
+          </div>
+        </div> : <p className="py-12 text-center text-sm text-muted">No scored interviews yet.</p>}
+      </Card>
+
       <Card className="animate-fade-in-up">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <div><h2 className="font-semibold text-ink">Signups and login activity</h2><p className="mt-1 text-xs text-muted">Daily activity over the last 30 days</p></div>
+            <div><h2 className="font-semibold text-ink">Signups and login activity</h2><p className="mt-1 text-xs text-muted">Share of activity over the last 30 days</p></div>
             <div className="flex gap-3 text-[11px]"><span className="inline-flex items-center gap-1.5 text-primary"><i className="h-2 w-2 rounded-full bg-primary" />New accounts</span><span className="inline-flex items-center gap-1.5 text-secondary"><i className="h-2 w-2 rounded-full bg-secondary" />Successful logins</span></div>
           </div>
-          {chartData.length === 0 ? <p className="py-16 text-center text-sm text-muted">No activity to chart yet.</p> : (
+          {activityTotals.length === 0 ? <p className="py-16 text-center text-sm text-muted">No activity to chart yet.</p> : (
             <ResponsiveContainer width="100%" height={290}>
-              <BarChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                <CartesianGrid stroke="var(--pn-border)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--pn-muted)" fontSize={10} tickLine={false} interval="preserveStartEnd" />
-                <YAxis allowDecimals={false} stroke="var(--pn-muted)" fontSize={11} tickLine={false} />
-                <Tooltip content={<ActivityTooltip />} cursor={{ fill: 'var(--pn-panel-2)' }} />
-                <Bar dataKey="newAccounts" name="New accounts" fill="#176F68" radius={[4, 4, 0, 0]} maxBarSize={14} />
-                <Bar dataKey="logins" name="Successful logins" fill="#4D8C7A" radius={[4, 4, 0, 0]} maxBarSize={14} />
-              </BarChart>
+              <PieChart>
+                <Pie data={activityTotals} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={68} outerRadius={106} paddingAngle={3} stroke="none">
+                  {activityTotals.map((item) => <Cell key={item.name} fill={item.color} />)}
+                </Pie>
+                <Tooltip content={<ActivityTooltip />} />
+              </PieChart>
             </ResponsiveContainer>
           )}
       </Card>

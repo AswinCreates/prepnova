@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
@@ -22,12 +22,26 @@ export default function InterviewSession() {
   const [answerMode, setAnswerMode] = useState('typed')
   const [answers, setAnswers] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const [tabSwitchStrikes, setTabSwitchStrikes] = useState(0)
   const [secondsPerQuestion, setSecondsPerQuestion] = useState(getQuestionTimeLimit('Medium'))
+  const monitorDataRef = useRef({ enabled: false })
+  const hiddenRef = useRef(false)
+  const strikeInFlightRef = useRef(false)
 
   const current = questions[currentIndex]
   const isLastQuestion = currentIndex === questions.length - 1
 
   const { secondsLeft, formatted, reset } = useTimer(secondsPerQuestion, () => handleNext())
+
+  useEffect(() => {
+    monitorDataRef.current = {
+      enabled: monitorDataRef.current.enabled,
+      questionId: current?.id,
+      answer,
+      answerMode,
+      timeTakenSeconds: Math.max(0, secondsPerQuestion - secondsLeft),
+    }
+  }, [current?.id, answer, answerMode, secondsPerQuestion, secondsLeft])
 
   useEffect(() => {
     let active = true
@@ -40,10 +54,17 @@ export default function InterviewSession() {
         setSecondsPerQuestion(questionTimeLimit)
         reset(questionTimeLimit)
         setQuestions(iv.questions || [])
+        setTabSwitchStrikes(iv.tabSwitchStrikes || 0)
         if (iv.status === 'completed') {
           navigate(`/interview/results/${id}`, { replace: true })
           return
         }
+        if (iv.status === 'suspended') {
+          toast.error('This interview was suspended after three tab switches.')
+          navigate('/interview/history', { replace: true })
+          return
+        }
+        monitorDataRef.current.enabled = true
       })
       .catch((err) => {
         toast.error(err.response?.data?.message || 'Could not load the interview')
@@ -57,6 +78,43 @@ export default function InterviewSession() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        hiddenRef.current = false
+        return
+      }
+      if (document.visibilityState !== 'hidden' || hiddenRef.current || !monitorDataRef.current.enabled) return
+      hiddenRef.current = true
+      if (strikeInFlightRef.current) return
+      strikeInFlightRef.current = true
+
+      const snapshot = monitorDataRef.current
+      api.post(`/interviews/${id}/tab-switch`, {
+        questionId: snapshot.questionId,
+        answerText: snapshot.answer || '',
+        answerMode: snapshot.answerMode || 'typed',
+        timeTakenSeconds: snapshot.timeTakenSeconds || 0,
+      }).then(({ data }) => {
+        setTabSwitchStrikes(data.strikes || 0)
+        if (data.suspended) {
+          monitorDataRef.current.enabled = false
+          toast.error('Interview suspended after three tab switches. You can find it in your history.')
+          navigate('/interview/history', { replace: true })
+          return
+        }
+        toast(`Tab switch warning ${data.strikes} of 3. The interview will be suspended after 3 strikes.`, { icon: '⚠️' })
+      }).catch((err) => {
+        toast.error(err.response?.data?.message || 'Could not record the tab switch. Return to the interview and try again.')
+      }).finally(() => {
+        strikeInFlightRef.current = false
+      })
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [id, navigate])
 
   const submitAndComplete = async (finalAnswers) => {
     if (submitting) return
@@ -162,6 +220,12 @@ export default function InterviewSession() {
           </span>
         </div>
       </div>
+
+      {tabSwitchStrikes > 0 && (
+        <div role="status" className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-ink">
+          Tab switch warning: {tabSwitchStrikes} of 3 strikes. A third switch will suspend this interview.
+        </div>
+      )}
 
       {/* Timer progress bar */}
       <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-panel2">

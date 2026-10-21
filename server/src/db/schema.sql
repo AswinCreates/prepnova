@@ -138,14 +138,21 @@ CREATE TABLE IF NOT EXISTS interviews (
   target_role   VARCHAR(160),
   job_description TEXT,
   status        VARCHAR(20) NOT NULL DEFAULT 'in_progress'
-                CHECK (status IN ('in_progress','completed','cancelled')),
+                CHECK (status IN ('in_progress','completed','suspended','cancelled')),
   total_score   INTEGER,
+  tab_switch_strikes INTEGER NOT NULL DEFAULT 0,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  completed_at  TIMESTAMPTZ
+  completed_at  TIMESTAMPTZ,
+  suspended_at  TIMESTAMPTZ
 );
 
 ALTER TABLE interviews ADD COLUMN IF NOT EXISTS target_role VARCHAR(160);
 ALTER TABLE interviews ADD COLUMN IF NOT EXISTS job_description TEXT;
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS tab_switch_strikes INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMPTZ;
+ALTER TABLE interviews DROP CONSTRAINT IF EXISTS interviews_status_check;
+ALTER TABLE interviews ADD CONSTRAINT interviews_status_check
+  CHECK (status IN ('in_progress','completed','suspended','cancelled'));
 
 CREATE INDEX IF NOT EXISTS idx_interviews_user ON interviews(user_id);
 

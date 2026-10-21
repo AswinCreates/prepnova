@@ -53,12 +53,12 @@ const OUTPUT_JSON_SCHEMA = {
 }
 
 function buildPrompt(questions, answers, context = {}) {
-  const answerByQ = new Map((answers || []).map((a) => [a.question_id, a.answer_text]))
+  const answerByQ = new Map((answers || []).map((a) => [String(a.question_id), a.answer_text]))
   const lines = (questions || [])
     .map((q, i) => {
-      const text = answerByQ.get(q.id) || '(no answer provided)'
+      const text = answerByQ.get(String(q.id)) || '(no answer provided)'
       const reference = q.sample_answer ? `\nReference answer guidance (trusted rubric data): ${JSON.stringify(q.sample_answer)}` : ''
-      return `Q${i + 1} question (untrusted data): ${JSON.stringify(q.question_text)}${reference}\nCandidate answer (untrusted data): ${JSON.stringify(text)}`
+      return `Q${i + 1} (questionId: ${q.id}) question (untrusted data): ${JSON.stringify(q.question_text)}${reference}\nCandidate answer (untrusted data): ${JSON.stringify(text)}`
     })
     .join('\n\n')
 
@@ -88,7 +88,8 @@ function buildPrompt(questions, answers, context = {}) {
     '- Score every assigned question. An unanswered question is 0/10.',
     '- overallScore must equal round(sum(question scores) / (number of assigned questions * 10) * 100).',
     '- Do not average only the questions that received an answer.',
-    '- questionEvaluations must contain ONE entry per question, using the question IDs provided below.',
+    '- questionEvaluations must contain ONE entry per question, in the same order as listed below.',
+    '- Copy each questionId exactly from the Q line. Never use the question number as its questionId.',
     '- Each question score must be an integer 0-10.',
     '- strengths/weaknesses/improvements are arrays of concise strings.',
     '- Score anchors: 0 unanswered; 1-2 mostly incorrect or irrelevant; 3-4 limited understanding; 5-6 adequate but missing important detail; 7-8 strong with sound reasoning; 9-10 accurate, clear, complete, and supported by relevant evidence.',
@@ -106,14 +107,18 @@ function buildPrompt(questions, answers, context = {}) {
 
 /** Sanitize an AI response into a guaranteed-valid, complete evaluation object. */
 function sanitize(raw, questions, answers) {
+  const rawEvaluations = Array.isArray(raw.questionEvaluations) ? raw.questionEvaluations : []
   const byId = {}
-  for (const qe of Array.isArray(raw.questionEvaluations) ? raw.questionEvaluations : []) {
+  for (const qe of rawEvaluations) {
     if (qe && typeof qe.questionId !== 'undefined') byId[String(qe.questionId)] = qe
   }
+  const positionalIds = rawEvaluations.length === questions.length && rawEvaluations.every(
+    (item, index) => String(item?.questionId) === String(index + 1)
+  )
 
   const answerById = new Map((answers || []).map((answer) => [String(answer.question_id), answer.answer_text]))
   const questionEvaluations = (questions || []).map((q, i) => {
-    const qe = byId[String(q.id)]
+    const qe = (positionalIds ? rawEvaluations[i] : byId[String(q.id)]) || rawEvaluations[i]
     const answered = Boolean(String(answerById.get(String(q.id)) || '').trim())
     const score = answered ? Number(qe?.score) : 0
     return {

@@ -30,6 +30,51 @@ function assertOwns(row) {
   if (!row) throw new ApiError(404, 'Interview not found')
 }
 
+async function evaluateQuestionRows(interview, questionRows) {
+  const questions = questionRows.map((row) => ({
+    id: row.id,
+    question_text: row.question_text,
+    sample_answer: row.sample_answer,
+  }))
+  const answers = questionRows.map((row) => ({
+    question_id: row.id,
+    answer_text: row.answer_text || '',
+  }))
+  const evaluation = await evaluateInterview({
+    questions,
+    answers,
+    context: {
+      mode: interview.mode,
+      domain: interview.domain,
+      difficulty: interview.difficulty,
+      targetRole: interview.target_role,
+      jobDescription: interview.job_description,
+    },
+  })
+
+  const evaluationById = new Map(evaluation.questionEvaluations.map((item) => [String(item.questionId), item]))
+  for (const row of questionRows.filter((item) => item.question_type === 'mcq')) {
+    const item = evaluationById.get(String(row.id))
+    if (!item) continue
+    const options = Array.isArray(row.options) ? row.options : []
+    const expected = options[row.correct_option_index]
+    const answered = Boolean(String(row.answer_text || '').trim())
+    const correct = answered && String(row.answer_text) === String(expected)
+    item.score = correct ? 10 : 0
+    item.feedback = !answered
+      ? 'No answer was selected. This question counts as 0.'
+      : correct
+        ? 'Correct answer.'
+        : `Incorrect. Correct answer: ${expected || 'unavailable'}. ${row.sample_answer || ''}`.trim()
+    item.strengths = correct ? ['Correct option selected.'] : []
+    item.improvements = correct ? [] : ['Review the correct answer and the concept behind it.']
+  }
+  evaluation.overallScore = evaluation.questionEvaluations.length
+    ? Math.round(evaluation.questionEvaluations.reduce((sum, item) => sum + item.score, 0) / (evaluation.questionEvaluations.length * 10) * 100)
+    : 0
+  return evaluation
+}
+
 /** Create an interview, snapshot a question set (via placeholder answers). */
 export async function createInterview(req, res) {
   const {
@@ -126,6 +171,8 @@ async function fetchInterview(userId, interviewId) {
     targetRole: interview.target_role,
     jobDescription: interview.job_description,
     status: interview.status,
+    tabSwitchStrikes: interview.tab_switch_strikes || 0,
+    suspendedAt: interview.suspended_at,
     totalScore: interview.total_score,
     completedAt: interview.completed_at,
     createdAt: interview.created_at,
@@ -144,6 +191,51 @@ async function fetchInterview(userId, interviewId) {
 
 export async function getInterviewById(req, res) {
   res.json({ interview: await fetchInterview(req.userId, Number(req.params.id)) })
+}
+
+/** Record a tab-switch strike and suspend the interview on the third strike. */
+export async function recordTabSwitch(req, res) {
+  const interviewId = Number(req.params.id)
+  const { questionId, answerText = '', answerMode = 'typed', timeTakenSeconds = 0 } = req.body
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const { rows: [interview] } = await client.query(
+      'SELECT id, status, tab_switch_strikes FROM interviews WHERE id = $1 AND user_id = $2 FOR UPDATE',
+      [interviewId, req.userId]
+    )
+    assertOwns(interview)
+    if (interview.status !== 'in_progress') {
+      await client.query('COMMIT')
+      return res.json({ status: interview.status, strikes: interview.tab_switch_strikes, suspended: interview.status === 'suspended' })
+    }
+
+    if (Number.isInteger(questionId)) {
+      await client.query(
+        `UPDATE answers
+         SET answer_text = $1, answer_mode = $2, time_taken_seconds = $3, updated_at = now()
+         WHERE interview_id = $4 AND question_id = $5 AND user_id = $6`,
+        [answerText, answerMode, timeTakenSeconds, interviewId, questionId, req.userId]
+      )
+    }
+
+    const { rows: [updated] } = await client.query(
+      `UPDATE interviews
+       SET tab_switch_strikes = tab_switch_strikes + 1,
+           status = CASE WHEN tab_switch_strikes + 1 >= 3 THEN 'suspended' ELSE status END,
+           suspended_at = CASE WHEN tab_switch_strikes + 1 >= 3 THEN now() ELSE suspended_at END
+       WHERE id = $1
+       RETURNING status, tab_switch_strikes`,
+      [interviewId]
+    )
+    await client.query('COMMIT')
+    res.json({ status: updated.status, strikes: updated.tab_switch_strikes, suspended: updated.status === 'suspended' })
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 /** Save individual/batch answers for an interview. */
@@ -215,48 +307,7 @@ export async function completeInterview(req, res) {
       [interviewId]
     )
 
-    const questions = questionRows.map((row) => ({
-      id: row.id,
-      question_text: row.question_text,
-      sample_answer: row.sample_answer,
-    }))
-    const candidateAnswers = questionRows.map((row) => ({
-      question_id: row.id,
-      answer_text: row.answer_text || '',
-    }))
-
-    const evaluation = await evaluateInterview({
-      questions,
-      answers: candidateAnswers,
-      context: {
-        mode: interview.mode,
-        domain: interview.domain,
-        difficulty: interview.difficulty,
-        targetRole: interview.target_role,
-        jobDescription: interview.job_description,
-      },
-    })
-
-    const questionEvaluationById = new Map(evaluation.questionEvaluations.map((item) => [String(item.questionId), item]))
-    for (const row of questionRows.filter((item) => item.question_type === 'mcq')) {
-      const questionEvaluation = questionEvaluationById.get(String(row.id))
-      if (!questionEvaluation) continue
-      const choices = Array.isArray(row.options) ? row.options : []
-      const correctAnswer = choices[row.correct_option_index]
-      const answered = Boolean(String(row.answer_text || '').trim())
-      const correct = answered && String(row.answer_text) === String(correctAnswer)
-      questionEvaluation.score = correct ? 10 : 0
-      questionEvaluation.feedback = !answered
-        ? 'No answer was selected. This question counts as 0.'
-        : correct
-          ? 'Correct answer.'
-          : `Incorrect. Correct answer: ${correctAnswer || 'unavailable'}. ${row.sample_answer || ''}`.trim()
-      questionEvaluation.strengths = correct ? ['Correct option selected.'] : []
-      questionEvaluation.improvements = correct ? [] : ['Review the correct answer and the concept behind it.']
-    }
-    evaluation.overallScore = evaluation.questionEvaluations.length
-      ? Math.round(evaluation.questionEvaluations.reduce((sum, item) => sum + item.score, 0) / (evaluation.questionEvaluations.length * 10) * 100)
-      : 0
+    const evaluation = await evaluateQuestionRows(interview, questionRows)
 
     await client.query(
       `INSERT INTO evaluations
@@ -314,10 +365,11 @@ export async function completeInterview(req, res) {
 /** Completed interview list for the current user. */
 export async function interviewHistory(req, res) {
   const { rows } = await pool.query(
-    `SELECT i.id, i.mode, i.domain, i.difficulty, i.target_role, i.total_score, i.completed_at AS date, i.created_at
+    `SELECT i.id, i.mode, i.domain, i.difficulty, i.target_role, i.total_score, i.status,
+            i.tab_switch_strikes, COALESCE(i.completed_at, i.suspended_at, i.created_at) AS date, i.created_at
      FROM interviews i
-     WHERE i.user_id = $1 AND i.status = 'completed'
-     ORDER BY i.completed_at DESC`,
+     WHERE i.user_id = $1 AND i.status IN ('completed', 'suspended')
+     ORDER BY COALESCE(i.completed_at, i.suspended_at, i.created_at) DESC`,
     [req.userId]
   )
   res.json({ sessions: rows })
@@ -334,7 +386,7 @@ export async function interviewResults(req, res) {
 
   // Question texts so the client can render per-question breakdowns.
   const { rows: questionRows } = await pool.query(
-    `SELECT a.question_id AS id, q.question_text, q.question_type, q.options,
+    `SELECT a.question_id AS id, q.question_text, q.sample_answer, q.question_type, q.options, q.correct_option_index,
             a.answer_text, a.answer_mode, a.time_taken_seconds
      FROM answers a
      JOIN questions q ON q.id = a.question_id
@@ -347,6 +399,38 @@ export async function interviewResults(req, res) {
     rows: [row],
   } = await pool.query('SELECT * FROM evaluations WHERE interview_id = $1', [interviewId])
   if (!row) throw new ApiError(404, 'This interview has not been evaluated yet')
+
+  // Older AI prompts omitted database question IDs, so valid AI scores could not
+  // be matched back to answered questions. Re-evaluate those reports once.
+  const savedQuestionEvaluations = Array.isArray(row.question_evaluations_json)
+    ? row.question_evaluations_json
+    : []
+  const savedById = new Map(savedQuestionEvaluations.map((item) => [String(item.questionId), item]))
+  const hasUnmatchedAiScores = row.raw_ai_response?.source === 'ai' && questionRows.some((question) => {
+    if (!String(question.answer_text || '').trim()) return false
+    const saved = savedById.get(String(question.id))
+    return !saved || saved.feedback === 'No feedback provided for this question.' || !Number.isFinite(Number(saved.score))
+  })
+  if (hasUnmatchedAiScores) {
+    const repaired = await evaluateQuestionRows(interview, questionRows)
+    await pool.query(
+      `UPDATE evaluations
+       SET overall_score = $2, summary = $3, strengths = $4, weaknesses = $5,
+           improvements = $6, question_evaluations_json = $7, raw_ai_response = $8
+       WHERE interview_id = $1`,
+      [interviewId, repaired.overallScore, repaired.summary, repaired.strengths, repaired.weaknesses,
+        repaired.improvements, JSON.stringify(repaired.questionEvaluations), JSON.stringify(repaired)]
+    )
+    await pool.query('UPDATE interviews SET total_score = $2 WHERE id = $1', [interviewId, repaired.overallScore])
+    row.overall_score = repaired.overallScore
+    row.summary = repaired.summary
+    row.strengths = repaired.strengths
+    row.weaknesses = repaired.weaknesses
+    row.improvements = repaired.improvements
+    row.question_evaluations_json = repaired.questionEvaluations
+    row.raw_ai_response = repaired
+    interview.total_score = repaired.overallScore
+  }
 
   // Repair reports created before skipped questions were included in scoring.
   const previousEvaluations = Array.isArray(row.question_evaluations_json)

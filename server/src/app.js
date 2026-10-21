@@ -14,7 +14,7 @@ import { notFound, errorHandler } from './middleware/errorHandler.js'
 const app = express()
 
 app.use(cors())
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '20mb' }))
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'prepnova-api', time: new Date().toISOString() })

@@ -20,7 +20,7 @@ export default function SpeechInterview({ question, onAnswerSubmitted }) {
       setError('No audio was captured. Check your microphone and try again.')
       return
     }
-    if (blob.size > 7_500_000) {
+    if (blob.size > 14_000_000) {
       setError('That recording is too large to transcribe. Please record a shorter answer.')
       return
     }
@@ -132,9 +132,16 @@ export default function SpeechInterview({ question, onAnswerSubmitted }) {
 
       {error && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-center text-sm text-danger">{error}</p>}
 
-      <div className="min-h-[76px] rounded-xl border border-line bg-panel p-3 text-sm text-ink whitespace-pre-wrap shadow-inner">
-        {transcript || <span className="text-muted">Your transcribed answer will appear here…</span>}
-      </div>
+      <textarea
+        aria-label="Review and edit your transcribed answer"
+        value={transcript}
+        onChange={(event) => setTranscript(event.target.value)}
+        placeholder="Your transcribed answer will appear here…"
+        rows={4}
+        disabled={isTranscribing}
+        className="min-h-[110px] w-full resize-y rounded-xl border border-line bg-panel p-3 text-sm text-ink placeholder:text-muted shadow-inner focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-70"
+      />
+      {transcript && <p className="text-xs text-muted">Review and correct names or words here before using your answer.</p>}
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button variant="outline" onClick={speakQuestion} disabled={isSpeaking || isListening || isTranscribing}>

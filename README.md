@@ -148,15 +148,14 @@ GET    /api/dashboard/stats          # totals, avg, best, domain split, timeline
 
 ## Speech (Voice) Interview
 
-`src/components/SpeechInterview.jsx` uses the browser's Web Speech API:
+`src/components/SpeechInterview.jsx` records microphone audio in the browser and submits it to the authenticated transcription endpoint:
 
-- **STT:** `SpeechRecognition`/`webkitSpeechRecognition` transcribes spoken answers.
+- **STT:** Gemini 3.5 Transcribe with an `en-IN` language hint and the signed-in user's display name as custom vocabulary.
 - **TTS:** `speechSynthesis` reads the question aloud.
 
 It is integrated into `InterviewSession` via a **Typed / Voice** toggle. Voice answers are
 captured and submitted through the same backend flow as typed answers (`answerMode: 'voice'`).
-If the browser does not support the API, the UI falls back to text mode gracefully.
-Best supported in Chrome/Edge.
+Users can review and edit the transcript before adding it to their answer. Set `AI_TRANSCRIPTION_MODEL` in `server/.env` to override the default transcription model.
 
 ## Troubleshooting
 

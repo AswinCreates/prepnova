@@ -44,7 +44,7 @@ export default function InterviewHistory() {
       <PageHeader
         icon="🕘"
         title="Interview History"
-        subtitle={`${sessions.length} completed session${sessions.length === 1 ? '' : 's'}`}
+        subtitle={`${sessions.length} interview session${sessions.length === 1 ? '' : 's'}`}
         actions={<Button onClick={() => navigate('/interview/setup')}>＋ New Interview</Button>}
       />
 
@@ -59,14 +59,15 @@ export default function InterviewHistory() {
       ) : (
         <div className="flex flex-col gap-3">
           {sessions.map((s) => {
+            const isSuspended = s.status === 'suspended'
             const variant =
               s.total_score >= 80 ? 'success' : s.total_score >= 50 ? 'warning' : 'danger'
             return (
               <Card
                 key={s.id}
                 hover
-                className="flex cursor-pointer items-center justify-between animate-fade-in-up"
-                onClick={() => navigate(`/interview/results/${s.id}`)}
+                className={`flex items-center justify-between animate-fade-in-up ${isSuspended ? '' : 'cursor-pointer'}`}
+                onClick={() => { if (!isSuspended) navigate(`/interview/results/${s.id}`) }}
               >
                 <div className="flex-1">
                   <div className="mb-1 flex flex-wrap gap-2">
@@ -74,6 +75,7 @@ export default function InterviewHistory() {
                     <Badge variant="secondary">{s.domain}</Badge>
                     <Badge variant="warning">{s.difficulty}</Badge>
                     {s.target_role && <Badge variant="primary">{s.target_role}</Badge>}
+                    {isSuspended && <Badge variant="danger">Suspended · 3 tab switches</Badge>}
                   </div>
                   <p className="text-sm text-muted">
                     {new Date(s.date).toLocaleDateString(undefined, {
@@ -83,7 +85,7 @@ export default function InterviewHistory() {
                     })}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                {!isSuspended && <div className="flex items-center gap-2">
                   <div className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-panel2 sm:block">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${
@@ -97,7 +99,7 @@ export default function InterviewHistory() {
                     />
                   </div>
                   <Badge variant={variant}>{s.total_score}%</Badge>
-                </div>
+                </div>}
               </Card>
             )
           })}
