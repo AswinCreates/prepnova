@@ -87,12 +87,14 @@ export default function Dashboard() {
     month: 'short',
     day: 'numeric',
   })
+  const localHour = new Date().getHours()
+  const timeGreeting = localHour < 12 ? 'Good morning' : localHour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
     <div className="animate-fade-in">
       <PageHeader
         icon={<Hand size={20} />}
-        title={`Welcome back, ${user?.name?.split(' ')[0] || 'there'}`}
+        title={`${timeGreeting}, ${user?.name?.split(' ')[0] || 'there'}`}
         subtitle={today}
         actions={<Button onClick={() => navigate('/interview/setup')}><Plus size={16} /> New Interview</Button>}
       />

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { getProfile, updateProfile } from '../controllers/userController.js'
+import { createStory, deleteStory, listStories, updateStory } from '../controllers/storyController.js'
 import { auth } from '../middleware/auth.js'
 import { asyncHandler, validate } from '../utils/validate.js'
 
@@ -20,9 +21,22 @@ const updateSchema = z.object({
   linkedinUrl: z.string().trim().max(300).refine((value) => !value || /^https?:\/\//i.test(value), 'Use a valid http or https URL').nullable().optional(),
   portfolioUrl: z.string().trim().max(300).refine((value) => !value || /^https?:\/\//i.test(value), 'Use a valid http or https URL').nullable().optional(),
 })
+const storySchema = z.object({
+  title: z.string().trim().min(2, 'Story title must be at least 2 characters').max(120),
+  storyType: z.enum(['Achievement', 'Problem solving', 'Teamwork', 'Leadership', 'Conflict resolution', 'Failure & learning', 'Adaptability', 'Initiative', 'Other']),
+  situation: z.string().trim().max(5000).default(''),
+  task: z.string().trim().max(5000).default(''),
+  action: z.string().trim().max(5000).default(''),
+  result: z.string().trim().max(5000).default(''),
+  skills: z.array(z.string().trim().min(1).max(60)).max(12).default([]),
+})
 
 router.use(auth)
 router.get('/profile', asyncHandler(getProfile))
 router.put('/profile', validate(updateSchema), asyncHandler(updateProfile))
+router.get('/stories', asyncHandler(listStories))
+router.post('/stories', validate(storySchema), asyncHandler(createStory))
+router.put('/stories/:id', validate(storySchema), asyncHandler(updateStory))
+router.delete('/stories/:id', asyncHandler(deleteStory))
 
 export default router

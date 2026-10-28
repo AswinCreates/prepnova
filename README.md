@@ -5,7 +5,9 @@ project. Candidates configure a mock interview (mode, domain, difficulty), answe
 questions by **typing or speaking** (Web Speech API), and receive AI-assisted evaluation
 with a score, summary, strengths/weaknesses, and per-question feedback. Practice can be
 focused around an optional target role and job description, and candidates can retry their
-lowest-scoring questions as a dedicated session.
+lowest-scoring questions as a dedicated session. The personal **Answer Story Vault** lets
+candidates save reusable experiences in Situation, Task, Action, and Result sections and
+tag them with the skills they demonstrate.
 
 ## Tech Stack
 
@@ -22,7 +24,7 @@ prepnova/
 │   ├── components/               # UI primitives + SpeechInterview + ProtectedRoute
 │   ├── context/AuthContext.jsx   # Real JWT auth state (login/signup/logout/me)
 │   ├── hooks/useTimer.js         # Per-question countdown timer
-│   ├── pages/                    # Login, Signup, Dashboard, Profile, InterviewSetup/Start/Session/Results/History
+│   ├── pages/                    # Login, Signup, Dashboard, Profile, StoryVault, interview and report pages
 │   └── services/api.js           # Axios instance + bearer token + 401 handling
 ├── server/                       # Node + Express + PostgreSQL backend
 │   ├── .env.example
@@ -135,6 +137,10 @@ POST   /api/auth/login               # login    → { token, user }
 GET    /api/auth/me                  # current user (JWT)
 GET    /api/users/profile            # user profile (JWT)
 PUT    /api/users/profile            # update name / preferred_domain / target_skills
+GET    /api/users/stories            # list the signed-in user's STAR stories
+POST   /api/users/stories            # create a personal story
+PUT    /api/users/stories/:id        # update an owned story
+DELETE /api/users/stories/:id        # delete an owned story
 GET    /api/questions/pool           # question bank, filters: mode, domain, difficulty
 POST   /api/interviews               # create interview → interviewId + question set
 POST   /api/interviews/:id/retry     # create a focused retry from the lowest-scoring questions

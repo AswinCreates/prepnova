@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ThemeToggle, { ThemeCycleButton } from './ThemeToggle'
-import { Award, LifeBuoy, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import { Award, BookOpen, LifeBuoy, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 import brandMark from '../assets/prepnova_logo.png'
 
 /* --- nav icons --- */
@@ -55,6 +55,7 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', Icon: GridIcon, end: true },
   { to: '/interview/setup', label: 'New Interview', Icon: SparkIcon },
   { to: '/interview/history', label: 'History', Icon: ClockIcon },
+  { to: '/stories', label: 'Story Vault', Icon: BookOpen },
   { to: '/leaderboard', label: 'Leaderboard', Icon: Award },
   { to: '/support', label: 'Help & Support', Icon: LifeBuoy },
   { to: '/profile', label: 'Profile', Icon: UserIcon },
@@ -154,7 +155,10 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
 
         {/* Bottom: theme + user + logout */}
         <div className={`space-y-3 border-t border-line px-4 py-4 ${collapsed ? 'lg:px-2' : ''}`}>
-          <div className={collapsed ? 'lg:hidden' : ''}><ThemeToggle /></div>
+          <div className={collapsed ? 'lg:hidden' : ''}>
+            <ThemeToggle />
+            <p className="mt-1.5 px-1 text-right text-[10px] text-muted">Theme shortcut: <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">Ctrl</kbd> + <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">K</kbd> <span className="mx-0.5">·</span> <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">⌘</kbd> + <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">K</kbd></p>
+          </div>
           {collapsed && <div className="hidden justify-center lg:flex"><ThemeCycleButton /></div>}
 
           <div title={collapsed ? `${user?.name || 'Candidate'}${user?.email ? ` · ${user.email}` : ''}` : undefined} className={`flex items-center gap-3 rounded-xl border border-line bg-panel2 px-3 py-2.5 ${collapsed ? 'lg:justify-center lg:px-1' : ''}`}>

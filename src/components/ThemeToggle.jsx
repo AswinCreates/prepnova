@@ -26,7 +26,7 @@ export default function ThemeToggle({ className = '' }) {
             type="button"
             onClick={() => setMode(value)}
             aria-pressed={active}
-            title={`${label} mode`}
+            title={`${label} mode · Ctrl+K / ⌘K cycles themes`}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all duration-200 active:scale-95 ${
               active
                 ? isLandingToggle ? 'text-primary' : 'bg-primary text-white shadow-sm shadow-primary/20'
@@ -52,8 +52,8 @@ export function ThemeCycleButton({ className = '' }) {
     <button
       type="button"
       onClick={cycle}
-      title={`Theme: ${label} (click to change)`}
-      aria-label={`Theme: ${label}. Click to change.`}
+      title={`Theme: ${label} (click or press Ctrl+K / ⌘K to change)`}
+      aria-label={`Theme: ${label}. Click or press Ctrl+K / Command+K to change.`}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-panel2 text-ink transition-all duration-200 hover:border-primary/50 hover:text-primary active:scale-95 ${className}`}
     >
       <Icon className="h-4 w-4" />

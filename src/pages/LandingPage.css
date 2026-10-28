@@ -186,3 +186,94 @@ html.dark .landing-nav .mobile-menu-button{background:transparent;color:var(--lp
 /* Use the supplied mark consistently across the landing page brand lockup. */
 .pn-brand-mark{background:#fff!important;padding:3px;border:1px solid #e8e7e0;box-shadow:none!important}
 .pn-brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+
+/* Expanded product story: interview setup, feedback, and administrator tools. */
+.hero-proof-icon{display:grid;place-items:center;width:36px;height:36px;flex:none;border:1px solid #d9e5dc;border-radius:11px;background:#edf3ed;color:var(--lp-teal)}
+.feature-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.feature-card{min-height:246px}
+.feature-card h3{font-size:16px}
+.feature-card p{max-width:100%;padding-right:14px;font-size:12px}
+.feature-icon-0{background:#eaf1e9;color:var(--lp-teal)}
+.feature-icon-1{background:#f4ebe2;color:#ae754e}
+.feature-icon-2{background:#e8edf2;color:#5d7488}
+.report-section{overflow:hidden;background:#f5f4ef}
+.report-inner{display:grid;grid-template-columns:.9fr 1.1fr;align-items:center;gap:clamp(52px,8vw,120px);max-width:1480px;margin:auto;padding:clamp(78px,9vw,132px) clamp(30px,5vw,76px)}
+.report-copy{max-width:520px}
+.report-copy h2{margin:17px 0;color:var(--lp-ink);font:800 clamp(35px,4vw,52px)/1.12 'Manrope',sans-serif;letter-spacing:-2.4px}
+.report-copy h2 span{color:var(--lp-teal)}
+.report-copy>p{color:var(--lp-muted);font-size:15px;line-height:1.85}
+.report-copy ul{display:grid;gap:13px;margin:25px 0;padding:0;list-style:none}
+.report-copy li{display:flex;align-items:center;gap:10px;color:#435b5c;font-size:13px;font-weight:600}
+.report-copy li svg{flex:none;color:var(--lp-teal)}
+.report-link{display:inline-flex;align-items:center;gap:9px;margin-top:5px;color:var(--lp-teal);font-size:13px;font-weight:700}
+.report-link svg,.text-link svg{transition:transform .2s ease}
+.report-link:hover svg,.text-link:hover svg{transform:translateX(4px)}
+.report-art{position:relative;max-width:580px;margin:0 auto;padding:16px 12px 24px}
+.report-art:before{position:absolute;inset:0 0 35px 36px;border:1px solid #e1e4d9;border-radius:48% 48% 18px 18px;background:#e9eee7;content:''}
+.report-preview{position:relative;z-index:1;max-width:510px;margin:auto;padding:24px;border:1px solid #e1e8df;border-radius:18px;background:#fff;box-shadow:0 24px 70px rgba(25,55,43,.12);animation:lp-rise .75s .12s ease both}
+.report-preview-head{display:flex;align-items:center;gap:12px}
+.report-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#eaf1e9;color:var(--lp-teal)}
+.report-preview-head>span:nth-child(2){display:grid;gap:4px}
+.report-preview-head strong{color:#263e45;font:700 14px 'Manrope',sans-serif}
+.report-preview-head small,.report-score>small{color:#81908a;font-size:10px}
+.report-status{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding:6px 8px;border-radius:20px;background:#edf4ec;color:#4c8065;font-size:8px;font-weight:800;letter-spacing:.6px}
+.report-score-row{display:flex;align-items:center;justify-content:space-between;padding:24px 7px 19px}
+.report-score{display:grid;gap:6px}
+.report-score>span{color:#82918b;font-size:9px;font-weight:700;letter-spacing:.8px}
+.report-score>strong{color:#213941;font:800 43px/1 'Manrope',sans-serif;letter-spacing:-2px}
+.report-score>strong small{font-size:18px;letter-spacing:0}
+.report-donut{display:grid;place-items:center;width:94px;height:94px;border:9px solid #e8eee6;border-top-color:#176f68;border-right-color:#4d8c7a;border-radius:50%;color:var(--lp-teal)}
+.report-donut span{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:#f6f8f4}
+.report-divider{height:1px;background:#edf0eb}
+.report-insight{display:flex;align-items:center;gap:11px;padding:14px 2px;border-bottom:1px solid #edf0eb}
+.report-insight>span:nth-child(2){display:grid;gap:4px}
+.report-insight strong{color:#38534e;font-size:11px}
+.report-insight small{color:#899693;font-size:9px}
+.report-insight>svg{margin-left:auto;color:#86988e}
+.report-insight-mark{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#edf3ec;color:#52896b}
+.report-insight-mark-muted{background:#f3eee5;color:#a77a48}
+.report-download{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;border:1px solid #e6e9e2;border-radius:9px;color:#58716b;font-size:10px;font-weight:700}
+.report-download>span{width:1px;height:14px;margin:0 3px;background:#e2e7df}
+.report-download>svg:last-child{margin-left:auto;color:var(--lp-teal)}
+.report-art-note{position:absolute;right:-5px;bottom:0;z-index:2;display:flex;align-items:center;gap:7px;padding:10px 13px;border:1px solid #e8ece3;border-radius:9px;background:#fff;color:#4c6d5e;box-shadow:0 8px 24px rgba(25,55,43,.08);font-size:10px;font-weight:700;animation:lp-float 4.3s ease-in-out infinite}
+.report-art-note svg{color:var(--lp-teal)}
+.features-section,.how-section,.report-section,.faq-section{scroll-margin-top:104px}
+html.dark .hero-proof-icon{border-color:#315354;background:#204143;color:#a8d2b8}
+html.dark .report-section{background:#142f31}
+html.dark .report-copy h2{color:#edf3ed}
+html.dark .report-copy h2 span{color:#8ec5aa}
+html.dark .report-copy>p{color:#b0c2ba}
+html.dark .report-copy li{color:#cfddd5}
+html.dark .report-link{color:#9ac9ac}
+html.dark .report-art:before{border-color:#315354;background:#193839}
+html.dark .report-preview,html.dark .report-art-note{border-color:#315354;background:#183638;box-shadow:0 24px 70px rgba(0,0,0,.24)}
+html.dark .report-icon,html.dark .report-insight-mark{background:#285048;color:#a8d2b8}
+html.dark .report-insight-mark-muted{background:#493b32;color:#e4b999}
+html.dark .report-preview-head strong,html.dark .report-score>strong,html.dark .report-insight strong{color:#edf3ed}
+html.dark .report-preview-head small,html.dark .report-score>small,html.dark .report-score>span,html.dark .report-insight small{color:#afc2ba}
+html.dark .report-status{background:#204143;color:#a8d2b8}
+html.dark .report-divider,html.dark .report-insight{border-color:#315354}
+html.dark .report-download{border-color:#315354;color:#c0d0c8}
+html.dark .report-download>span{background:#315354}
+html.dark .report-donut{border-color:#315354;border-top-color:#8ec5aa;border-right-color:#4d8c7a;color:#a8d2b8}
+html.dark .report-donut span{background:#183638}
+html.dark .report-art-note{color:#c0d0c8}
+@media(max-width:760px){
+  .report-inner{grid-template-columns:1fr;gap:32px}
+  .report-copy{max-width:650px}
+  .report-art{width:min(100%,580px)}
+  .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .feature-grid{grid-template-columns:1fr;gap:11px}
+  .feature-card{min-height:190px}
+  .report-inner{padding-inline:22px}
+  .report-inner{padding-block:76px}
+  .report-copy h2{font-size:36px}
+  .report-copy>p{font-size:13px}
+  .report-preview{padding:19px}
+  .report-art-note{right:0;font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+  .report-preview,.report-art-note{animation:none!important;transition:none!important}
+}

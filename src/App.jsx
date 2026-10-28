@@ -17,6 +17,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import Leaderboard from './pages/Leaderboard'
 import NotFound from './pages/NotFound'
 import SupportPage from './pages/SupportPage'
+import StoryVault from './pages/StoryVault'
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="/support/:ticketId?" element={<SupportPage />} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/stories" element={<StoryVault />} />
               <Route path="/interview/setup" element={<InterviewSetup />} />
               <Route path="/interview/start/:id" element={<InterviewStart />} />
               <Route path="/interview/session/:id" element={<InterviewSession />} />

@@ -39,6 +39,20 @@ export default function NotificationsCenter() {
     }
   }, [location.pathname, refresh])
 
+  useEffect(() => {
+    const handleNotificationsShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.repeat || event.key.toLowerCase() !== 'i') return
+      const target = event.target
+      const tagName = target instanceof Element ? target.tagName : ''
+      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return
+      event.preventDefault()
+      setOpen((current) => !current)
+    }
+
+    window.addEventListener('keydown', handleNotificationsShortcut)
+    return () => window.removeEventListener('keydown', handleNotificationsShortcut)
+  }, [])
+
   const handleNotificationClick = async (notification) => {
     if (!notification.read_at) {
       setUpdatingId(notification.id)

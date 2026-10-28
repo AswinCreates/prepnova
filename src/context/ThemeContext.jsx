@@ -20,6 +20,22 @@ function applyThemeClass(isDark) {
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(() => localStorage.getItem(STORAGE_KEY) || 'system')
 
+  useEffect(() => {
+    const handleThemeShortcut = (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'k') return
+
+      const target = event.target
+      const tagName = target instanceof Element ? target.tagName : ''
+      if (target?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return
+
+      event.preventDefault()
+      setMode((current) => (current === 'light' ? 'dark' : current === 'dark' ? 'system' : 'light'))
+    }
+
+    window.addEventListener('keydown', handleThemeShortcut)
+    return () => window.removeEventListener('keydown', handleThemeShortcut)
+  }, [])
+
   // Effect only performs a DOM side effect (no setState) — safe with React 19 rules.
   useEffect(() => {
     applyThemeClass(resolveIsDark(mode))

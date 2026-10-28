@@ -335,3 +335,21 @@ CREATE TABLE IF NOT EXISTS evaluations (
   raw_ai_response           JSONB,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Reusable personal examples that help candidates structure behavioral answers.
+CREATE TABLE IF NOT EXISTS answer_stories (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title       VARCHAR(120) NOT NULL,
+  story_type  VARCHAR(40) NOT NULL DEFAULT 'Other',
+  situation   TEXT NOT NULL DEFAULT '',
+  task        TEXT NOT NULL DEFAULT '',
+  action      TEXT NOT NULL DEFAULT '',
+  result      TEXT NOT NULL DEFAULT '',
+  skills      TEXT[] NOT NULL DEFAULT '{}',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_answer_stories_user_updated
+  ON answer_stories(user_id, updated_at DESC);

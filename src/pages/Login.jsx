@@ -1,103 +1,75 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import Card from '../components/Card'
 import Input from '../components/Input'
-import Button from '../components/Button'
-import { ThemeCycleButton } from '../components/ThemeToggle'
-import { House } from 'lucide-react'
-import brandMark from '../assets/prepnova_logo.png'
+import AuthPageLayout from '../components/AuthPageLayout'
+import SwipeSubmitButton from '../components/SwipeSubmitButton'
+import '../styles/AuthPages.css'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const formRef = useRef(null)
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const validateFields = () => {
+    const nextErrors = {}
+    const normalizedEmail = email.trim()
+    if (!normalizedEmail) nextErrors.email = 'Enter your email address.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) nextErrors.email = 'Enter a valid email address.'
+    if (!password) nextErrors.password = 'Enter your password.'
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  const clearFieldError = (field) => setErrors((current) => {
+    if (!current[field]) return current
+    const next = { ...current }
+    delete next[field]
+    return next
+  })
+
+  const submitFromSwipe = () => {
+    if (!validateFields() || !formRef.current) return false
+    formRef.current.requestSubmit()
+    return true
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!validateFields()) return
     setLoading(true)
     try {
-      const loggedInUser = await login(email, password)
+      const loggedInUser = await login(email.trim(), password)
       toast.success('Logged in successfully')
       navigate(loggedInUser?.role === 'admin' ? '/admin' : '/dashboard')
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Login failed')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* animated gradient blobs */}
-      <div
-        className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/15 blur-3xl animate-float"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-secondary/15 blur-3xl animate-float"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-warning/10 blur-3xl animate-float"
-        aria-hidden="true"
-      />
-
-      <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
-        <Link
-          to="/"
-          className="inline-flex h-9 items-center gap-2 rounded-xl border border-line bg-panel2 px-3 text-sm font-medium text-ink transition-colors hover:border-primary/50 hover:text-primary"
-        >
-          <House size={15} />
-          <span>Home</span>
-        </Link>
-        <ThemeCycleButton />
-      </div>
-
-      <div className="relative flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-sm animate-fade-in-up border-primary/20">
-          <div className="mb-5 flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-white p-1"><img src={brandMark} alt="" className="h-full w-full object-contain" /></span>
-            <span className="text-lg font-bold tracking-tight text-primary">PrepNova</span>
+    <AuthPageLayout mode="login">
+      <div className="auth-form-card">
+        <form ref={formRef} onSubmit={handleSubmit} className="auth-form" noValidate>
+          <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true" disabled={loading}>Submit login form</button>
+          <Input label="Email address" type="email" name="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => { setEmail(event.target.value); clearFieldError('email') }} required error={errors.email} leadingIcon={<Mail size={17} />} />
+          <div className="auth-password-field">
+            <Input label="Password" type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(event) => { setPassword(event.target.value); clearFieldError('password') }} required error={errors.password} leadingIcon={<LockKeyhole size={17} />} />
+            <button className="auth-password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
           </div>
-          <h1 className="text-3xl font-bold mb-1 text-primary">
-            Welcome back
-          </h1>
-          <p className="text-sm text-muted mb-6">Log in to continue your interview prep</p>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <Button type="submit" loading={loading}>
-              Log In
-            </Button>
-          </form>
-
-          <p className="text-sm text-muted mt-4 text-center">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-primary font-medium hover:underline">
-              Sign up
-            </Link>
-          </p>
-        </Card>
+          <SwipeSubmitButton label="Log in" loading={loading} onComplete={submitFromSwipe} />
+        </form>
+        <p className="auth-switch">New to PrepNova? <Link to="/signup">Create an account</Link></p>
       </div>
-    </div>
+    </AuthPageLayout>
   )
 }

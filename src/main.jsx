@@ -9,7 +9,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{
           style: {
             background: 'var(--pn-panel)',
