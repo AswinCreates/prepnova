@@ -7,7 +7,7 @@ import { asyncHandler, validate } from '../utils/validate.js'
 const router = Router()
 const ticketSchema = z.object({
   subject: z.string().trim().min(4, 'Subject must be at least 4 characters').max(160),
-  category: z.enum(['Question', 'Technical issue', 'Account', 'Feedback', 'Complaint', 'Other']),
+  category: z.enum(['Question', 'Technical issue', 'Account', 'Feedback', 'Complaint', 'Clear interview history', 'Other']),
   message: z.string().trim().min(10, 'Please provide at least 10 characters').max(5000),
 })
 const messageSchema = z.object({

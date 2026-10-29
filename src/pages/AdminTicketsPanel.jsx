@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Check, Clock3, Inbox, RefreshCw, Send, Ticket, UserRound } from 'lucide-react'
+import { Check, Clock3, Inbox, RefreshCw, Send, Ticket, Trash2, UserRound } from 'lucide-react'
 import api from '../services/api'
 import Card from '../components/Card'
 import Button from '../components/Button'
@@ -39,6 +39,7 @@ export default function AdminTicketsPanel() {
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [clearingHistory, setClearingHistory] = useState(false)
 
   const loadTickets = useCallback(async () => {
     const { data } = await api.get('/admin/support/tickets', { params: filter ? { status: filter } : {} })
@@ -115,6 +116,29 @@ export default function AdminTicketsPanel() {
     }
   }
 
+  const clearRequestedHistory = async () => {
+    if (!ticket || ticket.status === 'closed' || ticket.category !== 'Clear interview history') return
+    const confirmed = window.confirm(`Permanently delete ${ticket.requester_name}'s completed and suspended interview history and reports? This cannot be undone. Their account and active interviews will remain.`)
+    if (!confirmed) return
+    setClearingHistory(true)
+    try {
+      const { data } = await api.post(`/admin/support/tickets/${ticket.id}/clear-history`)
+      setTicket((current) => ({
+        ...current,
+        status: data.ticket.status,
+        closed_at: data.ticket.closed_at,
+        updated_at: data.ticket.updated_at,
+        messages: [...current.messages, data.message],
+      }))
+      await loadTickets()
+      toast.success(`${data.ticket.deleted_interviews} interview history record${data.ticket.deleted_interviews === 1 ? '' : 's'} cleared`)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not clear this user’s interview history')
+    } finally {
+      setClearingHistory(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -146,7 +170,10 @@ export default function AdminTicketsPanel() {
             <>
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
                 <div><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-ink">{ticket.subject}</h3><Badge variant={statusVariant(ticket.status)}>{statusLabel(ticket.status)}</Badge></div><p className="mt-1 text-[11px] text-muted">Ticket #{ticket.id} · {ticket.category}</p><p className="mt-2 flex items-center gap-1.5 text-xs text-ink"><UserRound size={13} className="text-muted" />{ticket.requester_name} <span className="text-muted">· {ticket.requester_email}</span></p></div>
-                {ticket.status !== 'closed' && <Button type="button" variant="danger" size="sm" loading={closing} onClick={closeTicket}><Check size={14} /> Close ticket</Button>}
+                {ticket.status !== 'closed' && <div className="flex flex-wrap gap-2">
+                  {ticket.category === 'Clear interview history' && <Button type="button" variant="danger" size="sm" loading={clearingHistory} onClick={clearRequestedHistory}><Trash2 size={14} /> Clear requested history</Button>}
+                  <Button type="button" variant="outline" size="sm" loading={closing} onClick={closeTicket}><Check size={14} /> Close ticket</Button>
+                </div>}
               </div>
               <div className="max-h-[360px] space-y-3 overflow-y-auto px-5 py-4">
                 {ticket.messages.map((message) => {

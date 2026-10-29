@@ -215,3 +215,53 @@ export async function closeAdminTicket(req, res) {
     client.release()
   }
 }
+
+export async function clearHistoryFromTicket(req, res) {
+  const ticketId = parseTicketId(req.params.id)
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const { rows: [ticket] } = await client.query(
+      'SELECT id, user_id, subject, category, status FROM support_tickets WHERE id = $1 FOR UPDATE',
+      [ticketId]
+    )
+    if (!ticket) throw new ApiError(404, 'Ticket not found')
+    if (ticket.category !== 'Clear interview history') throw new ApiError(409, 'This action is only available for interview history removal requests')
+    if (ticket.status === 'closed') throw new ApiError(409, 'This ticket has already been resolved')
+
+    const { rows: removed } = await client.query(
+      `DELETE FROM interviews
+       WHERE user_id = $1 AND status IN ('completed', 'suspended')
+       RETURNING id`,
+      [ticket.user_id]
+    )
+    const removedCount = removed.length
+    const confirmation = `Your request has been completed. ${removedCount} interview history record${removedCount === 1 ? '' : 's'} and the associated reports were permanently deleted. Your account and active interviews were left unchanged.`
+    const { rows: [message] } = await client.query(
+      `INSERT INTO support_ticket_messages (ticket_id, sender_id, sender_role, message)
+       VALUES ($1, $2, 'admin', $3)
+       RETURNING id, sender_id, sender_role, message, created_at`,
+      [ticketId, req.userId, confirmation]
+    )
+    const { rows: [closed] } = await client.query(
+      `UPDATE support_tickets
+       SET status = 'closed', closed_at = now(), closed_by = $2, updated_at = now()
+       WHERE id = $1
+       RETURNING id, status, closed_at, updated_at`,
+      [ticketId, req.userId]
+    )
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, link, dedupe_key)
+       VALUES ($1, 'support_history_cleared', 'Interview history request completed', $2, $3, $4)
+       ON CONFLICT (user_id, dedupe_key) DO NOTHING`,
+      [ticket.user_id, confirmation, `/support/${ticketId}`, `ticket-history-cleared:${ticketId}`]
+    )
+    await client.query('COMMIT')
+    res.json({ ticket: { ...closed, deleted_interviews: removedCount }, message: { ...message, sender_name: req.adminName || 'PrepNova support' } })
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}

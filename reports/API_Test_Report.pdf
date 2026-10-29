@@ -1,0 +1,462 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 6176
+>>
+stream
+0.200025 w
+0 G
+BT
+/F2 22 Tf
+25.2999999999999972 TL
+0.149 0.188 0.235 rg
+48. 787.8899999999999864 Td
+(PrepNova API Test Report) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.149 0.188 0.235 rg
+48. 753.8899999999999864 Td
+(Local API and PostgreSQL verification | 29 October 2026) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 730.8899999999999864 Td
+(API base: http://localhost:5000/api) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.149 0.188 0.235 rg
+48. 703.8899999999999864 Td
+(Summary) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.149 0.188 0.235 rg
+48. 679.8899999999999864 Td
+(The API server and PostgreSQL connection were available. 56 checks passed and one operation was) Tj
+T* (intentionally skipped. All 40 declared API routes were inventoried; 39 were exercised and the leaderboard reset) Tj
+T* (route was reviewed but not invoked. Temporary test accounts and records were removed after the run.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.149 0.188 0.235 rg
+48. 633.8899999999999864 Td
+(Interview completion returned an AI sourced evaluation with five question evaluations and no provider error.) Tj
+T* (Audio transcription was checked for invalid request handling only; no real audio was sent to its external provider.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.149 0.188 0.235 rg
+48. 594.8899999999999864 Td
+(Results by area) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 570.8899999999999864 Td
+(Health: GET /health returned HTTP 200.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 554.8899999999999864 Td
+(Authentication: registration, login, current user, duplicate registration, invalid credentials, and missing token behaved as) Tj
+T* (expected \(201, 200, 409, 401\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 525.8899999999999864 Td
+(Profile and Story Vault: profile read/update and story list/create/update/delete passed \(200/201\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 509.8899999999999864 Td
+(Question pool, dashboard, and leaderboard: authenticated reads passed \(200\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 493.8899999999999864 Td
+(Notifications: list, mark one read, and mark all read passed \(200\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 477.8899999999999864 Td
+(Support: user create/list/read/reply and admin list/read/reply/close passed \(200/201\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 461.8899999999999864 Td
+(Admin: dashboard, account and question reads, temporary admin creation/deletion, disposable question creation passed) Tj
+T* (\(200/201\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 432.8899999999999864 Td
+(Interview lifecycle: create, read, save answers, complete, results, and retry passed \(200/201\).) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 416.8899999999999864 Td
+(Interview integrity: three tab-switch strikes suspended the disposable interview; history read passed.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 400.8899999999999864 Td
+(AI evaluation: completion returned source=ai, five question evaluations, and no provider error.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 384.8899999999999864 Td
+(Speech transcription: malformed audio payload was rejected with HTTP 400; provider transcription was not invoked.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.149 0.188 0.235 rg
+48. 361.8899999999999864 Td
+(Route inventory) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 337.8899999999999864 Td
+(Health and authentication: GET /health; POST /auth/register; POST /auth/login; GET /auth/me.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 321.8899999999999864 Td
+(Users: GET/PUT /users/profile; GET/POST /users/stories; PUT/DELETE /users/stories/:id.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 305.8899999999999864 Td
+(Question and dashboard: GET /questions/pool; GET /dashboard/stats; GET /dashboard/leaderboard.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 289.8899999999999864 Td
+(Notifications: GET /notifications; POST /notifications/read-all; POST /notifications/:id/read.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 273.8899999999999864 Td
+(Support: GET/POST /support/tickets; GET /support/tickets/:id; POST /support/tickets/:id/messages.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 257.8899999999999864 Td
+(Interviews: GET /interviews/history; POST /interviews; POST /interviews/transcribe; GET /interviews/:id; POST) Tj
+T* (/interviews/:id/tab-switch; POST /interviews/:id/answers; POST /interviews/:id/complete; GET /interviews/:id/results; POST) Tj
+T* (/interviews/:id/retry.) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.149 0.188 0.235 rg
+48. 215.8899999999999864 Td
+(Admin: GET /admin/dashboard; POST /admin/leaderboard/reset; GET /admin/support/tickets; GET /admin/support/tickets/:id;) Tj
+T* (POST /admin/support/tickets/:id/messages; POST /admin/support/tickets/:id/close; GET /admin/accounts; DELETE) Tj
+T* (/admin/accounts/:id; GET/POST /admin/questions; POST /admin/admins.) Tj
+ET
+BT
+/F2 14 Tf
+16.0999999999999979 TL
+0.149 0.188 0.235 rg
+48. 166.8899999999999864 Td
+(Skipped operation and limits) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.149 0.188 0.235 rg
+48. 142.8899999999999864 Td
+(POST /admin/leaderboard/reset was not executed because it changes shared global application state. Its route) Tj
+T* (and admin authorization were reviewed in source.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.149 0.188 0.235 rg
+48. 110.8899999999999864 Td
+(Speech transcription was tested only for request validation. Live audio recognition and provider availability were) Tj
+T* (not tested. These results describe this local run and do not certify production hosting, load capacity, or browser) Tj
+T* (microphone permissions.) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 0.494 0.525 rg
+48. 24.8899999999999864 Td
+(PrepNova API Test Report) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.471 0.494 0.525 rg
+506.3600000000000136 24.8899999999999864 Td
+(Page 1 of 1) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R ]
+/Count 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 5 0 R
+/F2 6 0 R
+/F3 7 0 R
+/F4 8 0 R
+/F5 9 0 R
+/F6 10 0 R
+/F7 11 0 R
+/F8 12 0 R
+/F9 13 0 R
+/F10 14 0 R
+/F11 15 0 R
+/F12 16 0 R
+/F13 17 0 R
+/F14 18 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+19 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20261029074257+05'30')
+>>
+endobj
+20 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000006380 00000 n 
+0000008197 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000006437 00000 n 
+0000006562 00000 n 
+0000006692 00000 n 
+0000006825 00000 n 
+0000006962 00000 n 
+0000007085 00000 n 
+0000007214 00000 n 
+0000007346 00000 n 
+0000007482 00000 n 
+0000007610 00000 n 
+0000007737 00000 n 
+0000007866 00000 n 
+0000007999 00000 n 
+0000008101 00000 n 
+0000008445 00000 n 
+0000008531 00000 n 
+trailer
+<<
+/Size 21
+/Root 20 0 R
+/Info 19 0 R
+/ID [ <81DBE17C26986E0FB8B770961032A185> <81DBE17C26986E0FB8B770961032A185> ]
+>>
+startxref
+8635
+%%EOF

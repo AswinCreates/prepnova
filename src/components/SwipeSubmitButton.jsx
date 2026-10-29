@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowRight, Check, LoaderCircle } from 'lucide-react'
 
 export default function SwipeSubmitButton({ label, loading = false, onComplete }) {
@@ -10,18 +10,18 @@ export default function SwipeSubmitButton({ label, loading = false, onComplete }
   const [dragging, setDragging] = useState(false)
   const [completed, setCompleted] = useState(false)
 
-  useEffect(() => {
-    if (!loading && completedRef.current) reset()
-  }, [loading])
-
-  const reset = () => {
+  const reset = useCallback(() => {
     dragRef.current = null
     completedRef.current = false
     ignoreClickRef.current = false
     setDragging(false)
     setCompleted(false)
     setOffset(0)
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!loading && completedRef.current) reset()
+  }, [loading, reset])
 
   const submit = () => {
     if (loading || completedRef.current) return

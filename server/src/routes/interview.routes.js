@@ -53,11 +53,12 @@ router.post('/transcribe', asyncHandler(async (req, res) => {
   if (typeof audio !== 'string' || !audio || audio.length > 19_000_000) {
     return res.status(400).json({ message: 'Audio recording is missing or too large. Please record a shorter answer.' })
   }
-  if (!['audio/webm', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/mp4;codecs=mp4a.40.2'].includes(mimeType)) {
+  const normalizedMimeType = typeof mimeType === 'string' ? mimeType.split(';')[0].trim().toLowerCase() : ''
+  if (!['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'].includes(normalizedMimeType)) {
     return res.status(400).json({ message: 'This audio format is not supported. Please use Chrome or Edge.' })
   }
   const { rows } = await pool.query('SELECT name FROM users WHERE id = $1', [req.userId])
-  const text = await transcribeAudio(audio, mimeType.split(';')[0], rows[0]?.name || '')
+  const text = await transcribeAudio(audio, normalizedMimeType, rows[0]?.name || '')
   res.json({ transcript: text })
 }))
 

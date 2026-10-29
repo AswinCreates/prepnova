@@ -5,6 +5,7 @@ const PROVIDER = (process.env.AI_PROVIDER || '').toLowerCase()
 const BASE_URL = (process.env.AI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/$/, '')
 const TRANSCRIPTION_MODEL = process.env.AI_TRANSCRIPTION_MODEL || 'gemini-3.5-transcribe'
 const FALLBACK_MODEL = process.env.AI_MODEL || 'gemini-3.8-flash'
+const REQUEST_TIMEOUT_MS = Number(process.env.AI_TRANSCRIPTION_TIMEOUT_MS || process.env.AI_TIMEOUT_MS || 30_000)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 class ProviderError extends Error {
@@ -14,41 +15,64 @@ class ProviderError extends Error {
   }
 }
 
-async function requestTranscript(model, audio, mimeType, speakerName, dedicated) {
+function getRequest(model, audio, mimeType, speakerName, dedicated) {
+  const vocabulary = [...new Set(['PrepNova', speakerName].map((term) => term.trim()).filter(Boolean))]
   const instruction = [
-    'Transcribe only the candidate speech in this audio. Return only the words actually spoken, with normal punctuation.',
-    'Do not translate, paraphrase, summarize, infer, or replace unclear speech with a plausible sentence. If a word cannot be heard, omit only that word.',
-    `The speaker may say the proper name “${speakerName || 'PrepNova'}”. Preserve the spoken name exactly.`,
-  ].join(' ')
-  const parts = []
-  if (!dedicated) parts.push({ text: instruction })
-  parts.push({ inline_data: { mime_type: mimeType, data: audio } })
-  const generationConfig = dedicated
-    ? {
-        audioTranscriptionConfig: {
-          languageCodes: ['en-IN'],
-          customVocabulary: ['PrepNova', speakerName].filter(Boolean),
-          mode: 'VERBATIM',
-        },
-        maxOutputTokens: 4096,
-      }
-    : { temperature: 0, maxOutputTokens: 4096 }
+    'Transcribe only the candidate speech. Return the words actually spoken with normal punctuation.',
+    'Do not translate, paraphrase, summarize, infer, or replace unclear speech with a plausible sentence. Preserve the speaker’s wording.',
+    vocabulary.length ? `Preserve these names and terms when they are spoken: ${vocabulary.join(', ')}.` : '',
+  ].filter(Boolean).join(' ')
 
+  if (dedicated) {
+    return {
+      url: `${BASE_URL}/interactions`,
+      body: {
+        model,
+        input: [{ type: 'audio', data: audio, mime_type: mimeType }],
+        generation_config: {
+          transcription_config: {
+            language_codes: ['en-IN'],
+            custom_vocabulary: vocabulary,
+            mode: { type: 'verbatim' },
+          },
+        },
+      },
+      extract: (data) => data.steps
+        ?.flatMap((step) => step.content || [])
+        .filter((content) => content.type === 'text')
+        .map((content) => content.text || '')
+        .join(''),
+    }
+  }
+
+  return {
+    url: `${BASE_URL}/models/${model}:generateContent`,
+    body: {
+      contents: [{ parts: [{ text: instruction }, { inline_data: { mime_type: mimeType, data: audio } }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: 4096 },
+    },
+    extract: (data) => data.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join(''),
+  }
+}
+
+async function requestTranscript(model, audio, mimeType, speakerName, dedicated) {
+  const request = getRequest(model, audio, mimeType, speakerName, dedicated)
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 60_000)
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
   try {
-    const response = await fetch(`${BASE_URL}/models/${model}:generateContent`, {
+    const response = await fetch(request.url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
-      body: JSON.stringify({ contents: [{ parts }], generationConfig }),
+      body: JSON.stringify(request.body),
       signal: controller.signal,
     })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) {
-      const providerMessage = body.error?.message || `HTTP ${response.status}`
-      throw new ProviderError(response.status, providerMessage)
+      throw new ProviderError(response.status, body.error?.message || `HTTP ${response.status}`)
     }
-    const transcript = body.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim()
+
+    const transcript = request.extract(body)?.trim()
     if (!transcript) throw new ProviderError(422, 'The model returned an empty transcript')
     return transcript
   } catch (error) {
@@ -86,6 +110,7 @@ export async function transcribeAudio(audio, mimeType, speakerName = '') {
       error.statusCode = 422
       throw error
     }
+
     if (FALLBACK_MODEL !== TRANSCRIPTION_MODEL) {
       console.warn(`[speech-transcription] ${TRANSCRIPTION_MODEL} failed (${primaryError.message}); trying ${FALLBACK_MODEL}`)
       try {

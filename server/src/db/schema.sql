@@ -81,13 +81,17 @@ CREATE TABLE IF NOT EXISTS support_tickets (
   id          SERIAL PRIMARY KEY,
   user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   subject     VARCHAR(160) NOT NULL,
-  category    VARCHAR(40) NOT NULL CHECK (category IN ('Question','Technical issue','Account','Feedback','Complaint','Other')),
+  category    VARCHAR(40) NOT NULL CHECK (category IN ('Question','Technical issue','Account','Feedback','Complaint','Clear interview history','Other')),
   status      VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','closed')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   closed_at   TIMESTAMPTZ,
   closed_by   INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
+
+ALTER TABLE support_tickets DROP CONSTRAINT IF EXISTS support_tickets_category_check;
+ALTER TABLE support_tickets ADD CONSTRAINT support_tickets_category_check
+  CHECK (category IN ('Question','Technical issue','Account','Feedback','Complaint','Clear interview history','Other'));
 
 CREATE INDEX IF NOT EXISTS idx_support_tickets_user_updated
   ON support_tickets(user_id, updated_at DESC);

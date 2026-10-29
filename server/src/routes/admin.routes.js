@@ -4,7 +4,7 @@ import { createAdmin, createQuestion, deleteAccount, getAdminDashboard, listAcco
 import { auth } from '../middleware/auth.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { asyncHandler, validate } from '../utils/validate.js'
-import { addAdminTicketMessage, closeAdminTicket, getAdminTicket, listAdminTickets } from '../controllers/supportController.js'
+import { addAdminTicketMessage, clearHistoryFromTicket, closeAdminTicket, getAdminTicket, listAdminTickets } from '../controllers/supportController.js'
 
 const router = Router()
 const createAdminSchema = z.object({
@@ -39,6 +39,7 @@ router.post('/leaderboard/reset', asyncHandler(resetLeaderboard))
 router.get('/support/tickets', asyncHandler(listAdminTickets))
 router.get('/support/tickets/:id', asyncHandler(getAdminTicket))
 router.post('/support/tickets/:id/messages', validate(ticketReplySchema), asyncHandler(addAdminTicketMessage))
+router.post('/support/tickets/:id/clear-history', asyncHandler(clearHistoryFromTicket))
 router.post('/support/tickets/:id/close', asyncHandler(closeAdminTicket))
 router.get('/accounts', asyncHandler(listAccounts))
 router.delete('/accounts/:id', asyncHandler(deleteAccount))

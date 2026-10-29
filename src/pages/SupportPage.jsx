@@ -10,7 +10,7 @@ import Input from '../components/Input'
 import Loader from '../components/Loader'
 import PageHeader from '../components/PageHeader'
 
-const CATEGORIES = ['Question', 'Technical issue', 'Account', 'Feedback', 'Complaint', 'Other']
+const CATEGORIES = ['Question', 'Technical issue', 'Account', 'Feedback', 'Complaint', 'Clear interview history', 'Other']
 const newTicketDefaults = { subject: '', category: 'Question', message: '' }
 
 function statusVariant(status) {
@@ -140,6 +140,7 @@ export default function SupportPage() {
             <label className="block text-sm font-medium text-ink">Category
               <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">{CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select>
             </label>
+            {form.category === 'Clear interview history' && <div className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs leading-relaxed text-ink">An administrator will review your request. If approved, completed and suspended interview records and their reports will be permanently deleted. Your account and any active interview will remain.</div>}
             <label className="block text-sm font-medium text-ink">What can we help with?
               <textarea value={form.message} onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))} minLength={10} maxLength={5000} rows={6} required placeholder="Include any details that might help us understand the issue..." className="mt-1.5 w-full resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm leading-relaxed text-ink outline-none placeholder:text-muted/70 focus:border-primary/60 focus:ring-2 focus:ring-primary/20" />
             </label>
