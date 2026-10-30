@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs'
 import { pool } from '../config/db.js'
-import { signToken, sanitizeUser } from '../middleware/auth.js'
+import { clearSessionCookie, setSessionCookie, signToken, sanitizeUser } from '../middleware/auth.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 export async function register(req, res) {
-  const { name, email, password } = req.body
+  const { name, email, password, rememberMe = false } = req.body
   const passwordHash = await bcrypt.hash(password, 10)
   const client = await pool.connect()
   try {
@@ -21,7 +21,8 @@ export async function register(req, res) {
     )
     await client.query('INSERT INTO login_events (user_id) VALUES ($1)', [row.id])
     await client.query('COMMIT')
-    res.status(201).json({ token: signToken(row.id), user: sanitizeUser(row) })
+    setSessionCookie(res, signToken(row.id, rememberMe), rememberMe)
+    res.status(201).json({ user: sanitizeUser(row) })
   } catch (err) {
     await client.query('ROLLBACK')
     if (err.code === '23505') throw new ApiError(409, 'An account with this email already exists')
@@ -32,7 +33,7 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { email, password } = req.body
+  const { email, password, rememberMe = false } = req.body
 
   const {
     rows: [row],
@@ -58,7 +59,8 @@ export async function login(req, res) {
     )
     await client.query('INSERT INTO login_events (user_id) VALUES ($1)', [row.id])
     await client.query('COMMIT')
-    res.json({ token: signToken(loggedInUser.id), user: sanitizeUser(loggedInUser) })
+    setSessionCookie(res, signToken(loggedInUser.id, rememberMe), rememberMe)
+    res.json({ user: sanitizeUser(loggedInUser) })
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -78,5 +80,17 @@ export async function me(req, res) {
     [req.userId]
   )
   if (!row) throw new ApiError(404, 'User not found')
+  if (req.authSource === 'bearer') setSessionCookie(res, signToken(req.userId), false)
   res.json({ user: sanitizeUser(row) })
+}
+
+export function logout(_req, res) {
+  clearSessionCookie(res)
+  res.status(204).end()
+}
+
+export function updateRememberPreference(req, res) {
+  const rememberMe = req.body.rememberMe === true
+  setSessionCookie(res, signToken(req.userId, rememberMe), rememberMe)
+  res.json({ rememberMe })
 }

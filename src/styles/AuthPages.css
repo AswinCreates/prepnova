@@ -51,6 +51,11 @@
 .auth-form label{color:var(--auth-ink);font-size:12px;font-weight:700}
 .auth-form input{min-height:46px;border-radius:10px;background:var(--auth-panel);font-size:13px}
 .auth-form input:focus{border-color:var(--auth-teal)}
+.auth-form .auth-remember{display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.auth-form .auth-remember input{width:16px;min-height:16px;height:16px;flex:none;margin:1px 0 0;accent-color:var(--auth-teal)}
+.auth-remember span{display:grid;gap:3px}
+.auth-remember strong{color:var(--auth-ink);font-size:11px}
+.auth-remember small{color:var(--auth-muted);font-size:10px;font-weight:400;line-height:1.5}
 .auth-form .relative>span{color:#82938b}
 .auth-password-field{position:relative}
 .auth-password-toggle{position:absolute;top:29px;right:9px;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:8px;background:transparent;color:var(--auth-muted);cursor:pointer;transition:background .2s,color .2s}

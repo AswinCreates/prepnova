@@ -132,9 +132,10 @@ AI_TIMEOUT_MS=30000
 ## REST API (summary)
 
 ```
-POST   /api/auth/register            # sign up → { token, user }
-POST   /api/auth/login               # login    → { token, user }
-GET    /api/auth/me                  # current user (JWT)
+POST   /api/auth/register            # sign up → { user }, sets HttpOnly session cookie
+POST   /api/auth/login               # login    → { user }, optional 30-day remember cookie
+POST   /api/auth/logout              # clear the auth cookie
+GET    /api/auth/me                  # current user (auth cookie; legacy bearer tokens accepted)
 GET    /api/users/profile            # user profile (JWT)
 PUT    /api/users/profile            # update name / preferred_domain / target_skills
 GET    /api/users/stories            # list the signed-in user's STAR stories
@@ -163,7 +164,17 @@ It is integrated into `InterviewSession` via a **Typed / Voice** toggle. Voice a
 captured and submitted through the same backend flow as typed answers (`answerMode: 'voice'`).
 Users can review and edit the transcript before adding it to their answer. Set `AI_TRANSCRIPTION_MODEL` in `server/.env` to override the default transcription model.
 
+## Sign-in Cookies
+
+On first visit, PrepNova asks users to **Accept** or **Deny** optional persistent sign-in
+cookies. Accepting enables the **Remember me for 30 days** option on login and signup;
+denying keeps authentication session-only. The required sign-in cookie is HttpOnly, and the
+JWT is not stored in `localStorage`. Cookie preferences can be reopened from **Cookie settings**.
+For local development, the backend allows `http://localhost:5173` and `http://127.0.0.1:5173`; set
+`CORS_ORIGINS` in `server/.env` to the exact frontend origin(s) when deploying. If the
+frontend and API are on separate sites, configure HTTPS and `COOKIE_SAME_SITE=none`.
+
 ## Troubleshooting
 
 - **DB connection refused:** start PostgreSQL, confirm credentials in `server/.env`, then rerun `npm run db:migrate`.
-- **401 redirects:** the API requires `Authorization: Bearer <token>`; the Axios interceptor adds it automatically from `localStorage`.
+- **Cookie sign-in fails across origins:** check that the frontend origin is listed in `CORS_ORIGINS`, requests include credentials, and deployed frontend/API domains use HTTPS. For separate sites, set `COOKIE_SAME_SITE=none`.

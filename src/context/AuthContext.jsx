@@ -5,16 +5,15 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  // If there is no persisted token there is nothing to validate.
-  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('token')))
+  const [loading, setLoading] = useState(true)
 
-  // Validate any persisted session on mount.
+  // Validate the HttpOnly session cookie. This request also migrates an older
+  // bearer-token session to a non-persistent cookie before removing the token.
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) return
     api
       .get('/auth/me')
       .then((res) => {
+        localStorage.removeItem('token')
         localStorage.setItem('user', JSON.stringify(res.data.user))
         setUser(res.data.user)
       })
@@ -25,22 +24,23 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
-  const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password })
-    localStorage.setItem('token', data.token)
+  const login = async (email, password, rememberMe = false) => {
+    const { data } = await api.post('/auth/login', { email, password, rememberMe })
+    localStorage.removeItem('token')
     localStorage.setItem('user', JSON.stringify(data.user))
     setUser(data.user)
     return data.user
   }
 
-  const signup = async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password })
-    localStorage.setItem('token', data.token)
+  const signup = async (name, email, password, rememberMe = false) => {
+    const { data } = await api.post('/auth/register', { name, email, password, rememberMe })
+    localStorage.removeItem('token')
     localStorage.setItem('user', JSON.stringify(data.user))
     setUser(data.user)
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try { await api.post('/auth/logout') } catch { /* Clear local app state even if the API is offline. */ }
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUser(null)

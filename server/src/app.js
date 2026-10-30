@@ -12,8 +12,19 @@ import supportRoutes from './routes/support.routes.js'
 import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
+const corsOrigins = new Set(
+  (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+)
 
-app.use(cors())
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, !origin || corsOrigins.has(origin))
+  },
+  credentials: true,
+}))
 app.use(express.json({ limit: '20mb' }))
 
 app.get('/api/health', (_req, res) => {

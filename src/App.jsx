@@ -18,6 +18,7 @@ import Leaderboard from './pages/Leaderboard'
 import NotFound from './pages/NotFound'
 import SupportPage from './pages/SupportPage'
 import StoryVault from './pages/StoryVault'
+import CookieConsent from './components/CookieConsent'
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent />
         </BrowserRouter>
       </AuthProvider>
     </ErrorBoundary>

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
@@ -6,17 +6,29 @@ import { useAuth } from '../context/AuthContext'
 import Input from '../components/Input'
 import AuthPageLayout from '../components/AuthPageLayout'
 import SwipeSubmitButton from '../components/SwipeSubmitButton'
+import { COOKIE_CONSENT_EVENT, getCookieConsent } from '../utils/cookieConsent'
 import '../styles/AuthPages.css'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [cookieConsent, setCookieConsent] = useState(getCookieConsent)
+  const [rememberMe, setRememberMe] = useState(() => getCookieConsent() === 'accepted')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const formRef = useRef(null)
   const { login } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const onConsentChange = (event) => {
+      setCookieConsent(event.detail)
+      setRememberMe(event.detail === 'accepted')
+    }
+    window.addEventListener(COOKIE_CONSENT_EVENT, onConsentChange)
+    return () => window.removeEventListener(COOKIE_CONSENT_EVENT, onConsentChange)
+  }, [])
 
   const validateFields = () => {
     const nextErrors = {}
@@ -46,7 +58,7 @@ export default function Login() {
     if (!validateFields()) return
     setLoading(true)
     try {
-      const loggedInUser = await login(email.trim(), password)
+      const loggedInUser = await login(email.trim(), password, rememberMe)
       toast.success('Logged in successfully')
       navigate(loggedInUser?.role === 'admin' ? '/admin' : '/dashboard')
     } catch (error) {
@@ -66,6 +78,10 @@ export default function Login() {
             <Input label="Password" type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(event) => { setPassword(event.target.value); clearFieldError('password') }} required error={errors.password} leadingIcon={<LockKeyhole size={17} />} />
             <button className="auth-password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
           </div>
+          <label className="auth-remember">
+            <input type="checkbox" checked={rememberMe} disabled={cookieConsent !== 'accepted'} onChange={(event) => setRememberMe(event.target.checked)} />
+            <span><strong>Remember me for 30 days</strong><small>{cookieConsent === 'accepted' ? 'You can turn off the persistent sign-in cookie for this login.' : 'Accept cookies to enable 30-day sign-in.'}</small></span>
+          </label>
           <SwipeSubmitButton label="Log in" loading={loading} onComplete={submitFromSwipe} />
         </form>
         <p className="auth-switch">New to PrepNova? <Link to="/signup">Create an account</Link></p>
