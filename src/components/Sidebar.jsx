@@ -157,7 +157,7 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
         <div className={`space-y-3 border-t border-line px-4 py-4 ${collapsed ? 'lg:px-2' : ''}`}>
           <div className={collapsed ? 'lg:hidden' : ''}>
             <ThemeToggle />
-            <p className="mt-1.5 px-1 text-right text-[10px] text-muted">Theme shortcut: <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">Ctrl</kbd> + <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">K</kbd> <span className="mx-0.5">·</span> <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">⌘</kbd> + <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">K</kbd></p>
+            <p className="mt-1.5 hidden px-1 text-right text-[10px] text-muted lg:block">Theme shortcut: <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">Ctrl</kbd> + <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">K</kbd> <span className="mx-0.5">·</span> <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">⌘</kbd> + <kbd className="rounded border border-line bg-panel px-1 py-0.5 font-sans">K</kbd></p>
           </div>
           {collapsed && <div className="hidden justify-center lg:flex"><ThemeCycleButton /></div>}
 

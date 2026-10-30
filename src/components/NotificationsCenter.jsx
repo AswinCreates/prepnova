@@ -104,13 +104,13 @@ export default function NotificationsCenter() {
       </button>
 
       {open && (
-        <section role="dialog" aria-label="Notifications" className="absolute right-0 top-12 z-[60] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-line bg-panel shadow-xl shadow-black/15 animate-fade-in-up">
+        <section role="dialog" aria-label="Notifications" className="fixed left-2 right-2 top-[4.5rem] z-[60] mx-auto w-auto max-w-[22rem] overflow-hidden rounded-2xl border border-line bg-panel shadow-xl shadow-black/15 animate-fade-in-up lg:absolute lg:left-auto lg:right-0 lg:top-12 lg:mx-0 lg:w-[min(22rem,calc(100vw-2rem))]">
           <header className="flex items-center justify-between border-b border-line px-4 py-3.5">
             <div><h2 className="text-sm font-semibold text-ink">Notifications</h2><p className="mt-0.5 text-[11px] text-muted">{unreadCount ? `${unreadCount} unread` : 'You’re all caught up'}</p></div>
             <button type="button" onClick={handleMarkAllRead} disabled={!unreadCount || markingAll} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-primary transition hover:bg-primary/10 disabled:cursor-default disabled:opacity-40"><CheckCheck size={14} /> Mark all read</button>
           </header>
 
-          <div className="max-h-[min(26rem,65vh)] overflow-y-auto">
+          <div className="max-h-[min(26rem,calc(100dvh-10rem))] overflow-y-auto">
             {notifications === null ? (
               <div className="px-4 py-10 text-center text-xs text-muted">Loading notifications…</div>
             ) : notifications.length ? (
