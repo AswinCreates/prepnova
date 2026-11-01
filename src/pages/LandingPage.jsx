@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import './LandingPage.css'
 import ThemeToggle from '../components/ThemeToggle'
+import { useAuth } from '../context/AuthContext'
 import brandMark from '../assets/prepnova_logo.png'
 
 const features = [
@@ -101,10 +102,12 @@ function ReportPreview() {
 }
 
 export default function LandingPage() {
+  const { user, loading } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
   const [activeSection, setActiveSection] = useState('')
   const returningToTop = useRef(false)
+  const accountPath = user?.role === 'admin' ? '/admin' : '/dashboard'
 
   useEffect(() => {
     const sectionIds = ['features', 'how-it-works', 'faq']
@@ -154,7 +157,7 @@ export default function LandingPage() {
             <a className="landing-section-link" href="#features" aria-current={activeSection === 'features' ? 'location' : undefined} onClick={closeMenu}>Features</a>
             <a className="landing-section-link" href="#how-it-works" aria-current={activeSection === 'how-it-works' ? 'location' : undefined} onClick={closeMenu}>How it works</a>
             <a className="landing-section-link" href="#faq" aria-current={activeSection === 'faq' ? 'location' : undefined} onClick={closeMenu}>FAQ</a>
-            <div className="landing-auth"><ThemeToggle className="landing-theme-toggle" /><Link className="nav-login" to="/login">Log in</Link><Link className="nav-cta" to="/signup">Get started <ArrowRight size={16} /></Link></div>
+            <div className="landing-auth"><ThemeToggle className="landing-theme-toggle" />{!loading && (user ? <Link className="nav-cta" to={accountPath}>Dashboard <ArrowRight size={16} /></Link> : <><Link className="nav-login" to="/login">Log in</Link><Link className="nav-cta" to="/signup">Get started <ArrowRight size={16} /></Link></>)}</div>
           </nav>
         </div>
       </header>
