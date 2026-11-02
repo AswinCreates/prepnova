@@ -97,7 +97,7 @@ function addPdfParagraph(doc, text, options = {}) {
 }
 
 export async function downloadInterviewPdf(interview, evaluation, candidateName) {
-  const { jsPDF } = await import('jspdf')
+  const [{ jsPDF }, { PDFDocument }] = await Promise.all([import('jspdf'), import('pdf-lib')])
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const report = reportSections(interview, evaluation, candidateName)
   const margin = 18
@@ -134,14 +134,53 @@ export async function downloadInterviewPdf(interview, evaluation, candidateName)
     common.state.y += 4
   }
 
-  doc.save(`${reportFilename(interview)}.pdf`)
+  const [coverResponse, reportBytes] = await Promise.all([
+    fetch(`${import.meta.env.BASE_URL}reportformat.pdf`),
+    Promise.resolve(doc.output('arraybuffer')),
+  ])
+  if (!coverResponse.ok) throw new Error('Could not load the report cover template')
+  const [coverPdf, reportPdf] = await Promise.all([
+    PDFDocument.load(await coverResponse.arrayBuffer()),
+    PDFDocument.load(reportBytes),
+  ])
+  const finalPdf = await PDFDocument.create()
+  const [coverPage] = await finalPdf.copyPages(coverPdf, [0])
+  finalPdf.addPage(coverPage)
+  const reportPages = await finalPdf.copyPages(reportPdf, reportPdf.getPageIndices())
+  reportPages.forEach((page) => finalPdf.addPage(page))
+  const finalBytes = await finalPdf.save()
+  saveBlob(new Blob([finalBytes], { type: 'application/pdf' }), `${reportFilename(interview)}.pdf`)
 }
 
 export async function downloadInterviewDocx(interview, evaluation, candidateName) {
-  const { Document, HeadingLevel, Packer, Paragraph } = await import('docx')
+  const { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun } = await import('docx')
   const report = reportSections(interview, evaluation, candidateName)
   const children = [
-    new Paragraph({ text: report.title, heading: HeadingLevel.TITLE }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 1900, after: 0 },
+      children: [new TextRun({ text: 'Interview', bold: true, size: 48, color: '142C36' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 600 },
+      children: [new TextRun({ text: 'Report', bold: true, size: 48, color: '142C36' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 1000 },
+      children: [new TextRun({ text: 'P R E P N O V A', bold: true, size: 22, color: '176F68' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [new TextRun({ text: 'P R E P A R E D   B Y :', size: 10, color: '61747B' })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: 'p r e p n o v a', size: 13, color: '61747B' })],
+    }),
+    new Paragraph({ text: report.title, heading: HeadingLevel.TITLE, pageBreakBefore: true }),
     new Paragraph({ text: `${report.candidateName} · ${report.completedAt}` }),
     new Paragraph({ text: 'Interview overview', heading: HeadingLevel.HEADING_1 }),
     ...report.overview.slice(1).map((line) => new Paragraph({ text: line, bullet: { indent: 360 } })),
