@@ -159,10 +159,15 @@ GET    /api/dashboard/stats          # totals, avg, best, domain split, timeline
 
 - **STT:** Gemini 3.5 Transcribe with an `en-IN` language hint and the signed-in user's display name as custom vocabulary.
 - **TTS:** `speechSynthesis` reads the question aloud.
+- **Voice delivery coaching:** Gemini estimates a possible perceived tone and gives feedback grounded in audible delivery cues such as pace, pauses, and vocal energy. This is a coaching impression, not a reliable determination of a person's actual emotional state.
 
 It is integrated into `InterviewSession` via a **Typed / Voice** toggle. Voice answers are
 captured and submitted through the same backend flow as typed answers (`answerMode: 'voice'`).
-Users can review and edit the transcript before adding it to their answer. Set `AI_TRANSCRIPTION_MODEL` in `server/.env` to override the default transcription model.
+Live captions use browser speech recognition when available; if the browser cannot start them or loses its connection, recording continues and Gemini provides the final transcript after recording stops. Users can review and edit the transcript before adding it to their answer. PrepNova stores the transcript and structured delivery feedback with the interview answer; it does not store the audio recording. Audio is sent to the configured Gemini service for transcription and delivery analysis. Set `AI_TRANSCRIPTION_MODEL` in `server/.env` to override the default transcription model.
+
+## Optional Camera Presence Check
+
+Interview sessions can optionally use the webcam to estimate whether a face is visible. Face detection runs locally with MediaPipe; video frames are not uploaded or stored. Only an approximate presence percentage and count of extended periods with no face detected are saved in the report. This is a practice aid and does not affect the interview score. Users can complete interviews with the camera turned off.
 
 ## Sign-in Cookies
 

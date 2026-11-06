@@ -49,6 +49,7 @@ function reportSections(interview, evaluation, candidateName) {
       `Overall score: ${evaluation.overallScore}%`,
     ],
     summary: evaluation.summary || 'No summary was provided.',
+    cameraPresence: evaluation.cameraPresence || null,
     strengths: evaluation.strengths || [],
     weaknesses: evaluation.weaknesses || [],
     improvements: evaluation.improvements || [],
@@ -60,6 +61,7 @@ function reportSections(interview, evaluation, candidateName) {
         score: result ? `${result.score}/10` : 'Not scored',
         answer: question.answer?.answer_text || 'No answer recorded.',
         answerMode: question.answer?.answer_mode || null,
+        voiceAnalysis: question.answer?.voice_analysis || null,
         feedback: result?.feedback || 'No feedback available.',
         strengths: result?.strengths || [],
         improvements: result?.improvements || [],
@@ -117,6 +119,12 @@ export async function downloadInterviewPdf(interview, evaluation, candidateName)
   addPdfParagraph(doc, 'Summary', { ...common, fontSize: 13, bold: true, color: [23, 111, 104] })
   addPdfParagraph(doc, report.summary, { ...common, fontSize: 10, color: [45, 63, 69], gap: 7 })
 
+  if (report.cameraPresence) {
+    addPdfParagraph(doc, 'Camera presence practice summary', { ...common, fontSize: 12, bold: true, color: [23, 111, 104], gap: 2 })
+    addPdfParagraph(doc, `Face detected in ${report.cameraPresence.faceVisiblePercent}% of sampled frames across about ${report.cameraPresence.durationSeconds} seconds. Extended periods with no face detected: ${report.cameraPresence.noFaceEvents}.`, { ...common, fontSize: 9.5, color: [45, 63, 69], gap: 2 })
+    addPdfParagraph(doc, 'Optional on-device check; approximate and not used in the interview score.', { ...common, fontSize: 8.5, color: [97, 116, 123], gap: 5 })
+  }
+
   for (const [heading, items] of [['Strengths', report.strengths], ['Areas to improve', report.weaknesses], ['Next steps', report.improvements]]) {
     if (!items.length) continue
     addPdfParagraph(doc, heading, { ...common, fontSize: 12, bold: true, color: [23, 111, 104], gap: 2 })
@@ -131,6 +139,12 @@ export async function downloadInterviewPdf(interview, evaluation, candidateName)
     addPdfParagraph(doc, `Your answer${question.answerMode ? ` (${question.answerMode})` : ''}: ${question.answer}`, { ...common, fontSize: 9, color: [82, 101, 107], gap: 2 })
     addPdfParagraph(doc, `Feedback: ${question.feedback}`, { ...common, fontSize: 9, color: [45, 63, 69], gap: 2 })
     for (const item of question.improvements) addPdfParagraph(doc, `Suggestion: ${item}`, { ...common, fontSize: 9, color: [82, 101, 107], gap: 1.5 })
+    if (question.voiceAnalysis) {
+      addPdfParagraph(doc, `Voice delivery (possible perceived tone: ${question.voiceAnalysis.perceivedTone}; ${question.voiceAnalysis.confidence} confidence)`, { ...common, fontSize: 9, bold: true, color: [23, 111, 104], gap: 1.5 })
+      for (const cue of question.voiceAnalysis.cues || []) addPdfParagraph(doc, `Audible cue: ${cue}`, { ...common, fontSize: 9, color: [82, 101, 107], gap: 1 })
+      if (question.voiceAnalysis.feedback) addPdfParagraph(doc, `Delivery suggestion: ${question.voiceAnalysis.feedback}`, { ...common, fontSize: 9, color: [82, 101, 107], gap: 1.5 })
+      addPdfParagraph(doc, question.voiceAnalysis.disclaimer || 'This is an estimate of how the voice may come across, not a determination of actual emotion.', { ...common, fontSize: 8, color: [97, 116, 123], gap: 1.5 })
+    }
     common.state.y += 4
   }
 
@@ -188,6 +202,14 @@ export async function downloadInterviewDocx(interview, evaluation, candidateName
     new Paragraph({ text: report.summary }),
   ]
 
+  if (report.cameraPresence) {
+    children.push(
+      new Paragraph({ text: 'Camera presence practice summary', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: `Face detected in ${report.cameraPresence.faceVisiblePercent}% of sampled frames across about ${report.cameraPresence.durationSeconds} seconds. Extended periods with no face detected: ${report.cameraPresence.noFaceEvents}.` }),
+      new Paragraph({ text: 'Optional on-device check; approximate and not used in the interview score.' }),
+    )
+  }
+
   for (const [heading, items] of [['Strengths', report.strengths], ['Areas to improve', report.weaknesses], ['Next steps', report.improvements]]) {
     if (!items.length) continue
     children.push(new Paragraph({ text: heading, heading: HeadingLevel.HEADING_1 }))
@@ -204,6 +226,14 @@ export async function downloadInterviewDocx(interview, evaluation, candidateName
       new Paragraph({ text: 'Feedback:', heading: HeadingLevel.HEADING_3 }),
       new Paragraph({ text: question.feedback }),
     )
+    if (question.voiceAnalysis) {
+      children.push(
+        new Paragraph({ text: `Voice delivery: possible perceived ${question.voiceAnalysis.perceivedTone} tone (${question.voiceAnalysis.confidence} confidence)`, heading: HeadingLevel.HEADING_3 }),
+      )
+      children.push(...(question.voiceAnalysis.cues || []).map((cue) => new Paragraph({ text: cue, bullet: { indent: 360 } })))
+      if (question.voiceAnalysis.feedback) children.push(new Paragraph({ text: `Delivery suggestion: ${question.voiceAnalysis.feedback}` }))
+      children.push(new Paragraph({ text: question.voiceAnalysis.disclaimer || 'This is an estimate of how the voice may come across, not a determination of actual emotion.' }))
+    }
     if (question.improvements.length) {
       children.push(new Paragraph({ text: 'Suggestions', heading: HeadingLevel.HEADING_3 }))
       children.push(...question.improvements.map((item) => new Paragraph({ text: item, bullet: { indent: 360 } })))

@@ -1,8 +1,10 @@
+import { randomBytes } from 'node:crypto'
 import { pool } from '../config/db.js'
 import { evaluateInterview } from '../services/aiEvaluationService.js'
 import { ApiError } from '../middleware/errorHandler.js'
 
 const JOB_STOPWORDS = new Set(['about', 'across', 'after', 'and', 'are', 'as', 'for', 'from', 'have', 'into', 'is', 'its', 'our', 'the', 'their', 'this', 'that', 'to', 'with', 'will', 'you', 'your', 'years', 'year', 'work', 'role', 'team', 'skills', 'experience', 'including', 'ability', 'strong', 'good', 'knowledge'])
+const createPublicInterviewId = () => `i${randomBytes(15).toString('hex')}`
 
 function words(text) {
   return String(text || '').toLowerCase().match(/[a-z0-9+#.]+/g) || []
@@ -113,10 +115,10 @@ export async function createInterview(req, res) {
     const {
       rows: [interview],
     } = await client.query(
-      `INSERT INTO interviews (user_id, mode, domain, difficulty, target_role, job_description)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, mode, domain, difficulty, target_role, job_description, status, created_at`,
-      [req.userId, mode, domain, difficulty, targetRole, jobDescription]
+      `INSERT INTO interviews (public_id, user_id, mode, domain, difficulty, target_role, job_description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, public_id, mode, domain, difficulty, target_role, job_description, status, created_at`,
+      [createPublicInterviewId(), req.userId, mode, domain, difficulty, targetRole, jobDescription]
     )
 
     for (const q of selected) {
@@ -130,7 +132,7 @@ export async function createInterview(req, res) {
     await client.query('COMMIT')
 
     res.status(201).json({
-      interviewId: interview.id,
+      interviewId: interview.public_id,
       mode: interview.mode,
       domain: interview.domain,
       difficulty: interview.difficulty,
@@ -155,7 +157,7 @@ async function fetchInterview(userId, interviewId) {
 
   const { rows: questionRows } = await pool.query(
     `SELECT a.question_id AS id, q.question_text, q.category, q.question_type, q.options,
-            a.answer_text, a.answer_mode, a.time_taken_seconds
+            a.answer_text, a.answer_mode, a.time_taken_seconds, a.voice_analysis
      FROM answers a
      JOIN questions q ON q.id = a.question_id
      WHERE a.interview_id = $1
@@ -164,7 +166,7 @@ async function fetchInterview(userId, interviewId) {
   )
 
   return {
-    id: interview.id,
+    id: interview.public_id,
     mode: interview.mode,
     domain: interview.domain,
     difficulty: interview.difficulty,
@@ -183,7 +185,7 @@ async function fetchInterview(userId, interviewId) {
       question_type: q.question_type,
       options: q.options,
       answer: q.answer_text
-        ? { answer_text: q.answer_text, answer_mode: q.answer_mode, time_taken_seconds: q.time_taken_seconds }
+        ? { answer_text: q.answer_text, answer_mode: q.answer_mode, time_taken_seconds: q.time_taken_seconds, voice_analysis: q.voice_analysis }
         : null,
     })),
   }
@@ -255,9 +257,9 @@ export async function saveAnswers(req, res) {
     for (const a of answers) {
       const result = await client.query(
         `UPDATE answers
-         SET answer_text = $1, answer_mode = $2, time_taken_seconds = $3, updated_at = now()
-         WHERE interview_id = $4 AND question_id = $5 AND user_id = $6`,
-        [a.answerText ?? '', a.answerMode || 'typed', a.timeTakenSeconds || 0, interviewId, a.questionId, req.userId]
+         SET answer_text = $1, answer_mode = $2, time_taken_seconds = $3, voice_analysis = $4::jsonb, updated_at = now()
+         WHERE interview_id = $5 AND question_id = $6 AND user_id = $7`,
+        [a.answerText ?? '', a.answerMode || 'typed', a.timeTakenSeconds || 0, JSON.stringify(a.voiceAnalysis ?? null), interviewId, a.questionId, req.userId]
       )
       saved += result.rowCount
     }
@@ -273,7 +275,7 @@ export async function saveAnswers(req, res) {
 /** Finalize an interview: persist answers, run AI evaluation, mark completed. */
 export async function completeInterview(req, res) {
   const interviewId = Number(req.params.id)
-  const { answers = [] } = req.body || {}
+  const { answers = [], cameraPresence = null } = req.body || {}
 
   const {
     rows: [interview],
@@ -290,9 +292,10 @@ export async function completeInterview(req, res) {
     // Save any answers passed with the completion request.
     for (const a of answers) {
       await client.query(
-        `UPDATE answers SET answer_text = $1, answer_mode = $2, time_taken_seconds = $3, updated_at = now()
-         WHERE interview_id = $4 AND question_id = $5 AND user_id = $6`,
-        [a.answerText ?? '', a.answerMode || 'typed', a.timeTakenSeconds || 0, interviewId, a.questionId, req.userId]
+        `UPDATE answers SET answer_text = $1, answer_mode = $2, time_taken_seconds = $3,
+             voice_analysis = $4::jsonb, updated_at = now()
+         WHERE interview_id = $5 AND question_id = $6 AND user_id = $7`,
+        [a.answerText ?? '', a.answerMode || 'typed', a.timeTakenSeconds || 0, JSON.stringify(a.voiceAnalysis ?? null), interviewId, a.questionId, req.userId]
       )
     }
 
@@ -311,8 +314,8 @@ export async function completeInterview(req, res) {
 
     await client.query(
       `INSERT INTO evaluations
-        (interview_id, overall_score, summary, strengths, weaknesses, improvements, question_evaluations_json, raw_ai_response)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        (interview_id, overall_score, summary, strengths, weaknesses, improvements, question_evaluations_json, raw_ai_response, camera_presence_json)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (interview_id) DO UPDATE
          SET overall_score = EXCLUDED.overall_score,
              summary = EXCLUDED.summary,
@@ -320,7 +323,8 @@ export async function completeInterview(req, res) {
              weaknesses = EXCLUDED.weaknesses,
              improvements = EXCLUDED.improvements,
              question_evaluations_json = EXCLUDED.question_evaluations_json,
-             raw_ai_response = EXCLUDED.raw_ai_response`,
+             raw_ai_response = EXCLUDED.raw_ai_response,
+             camera_presence_json = EXCLUDED.camera_presence_json`,
       [
         interviewId,
         evaluation.overallScore,
@@ -330,6 +334,7 @@ export async function completeInterview(req, res) {
         evaluation.improvements,
         JSON.stringify(evaluation.questionEvaluations),
         JSON.stringify(evaluation),
+        JSON.stringify(cameraPresence),
       ]
     )
 
@@ -347,13 +352,13 @@ export async function completeInterview(req, res) {
       [
         req.userId,
         `Your ${interview.domain} interview report is ready. You scored ${evaluation.overallScore}%.`,
-        `/interview/results/${interviewId}`,
+        `/interview/results/${interview.public_id}`,
         `interview-report:${interviewId}`,
       ]
     )
 
     await client.query('COMMIT')
-    res.json({ interviewId, ...evaluation })
+    res.json({ interviewId: interview.public_id, ...evaluation })
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -365,7 +370,7 @@ export async function completeInterview(req, res) {
 /** Completed interview list for the current user. */
 export async function interviewHistory(req, res) {
   const { rows } = await pool.query(
-    `SELECT i.id, i.mode, i.domain, i.difficulty, i.target_role, i.total_score, i.status,
+    `SELECT i.public_id AS id, i.mode, i.domain, i.difficulty, i.target_role, i.total_score, i.status,
             i.tab_switch_strikes, COALESCE(i.completed_at, i.suspended_at, i.created_at) AS date, i.created_at
      FROM interviews i
      WHERE i.user_id = $1 AND i.status IN ('completed', 'suspended')
@@ -387,7 +392,7 @@ export async function interviewResults(req, res) {
   // Question texts so the client can render per-question breakdowns.
   const { rows: questionRows } = await pool.query(
     `SELECT a.question_id AS id, q.question_text, q.sample_answer, q.question_type, q.options, q.correct_option_index,
-            a.answer_text, a.answer_mode, a.time_taken_seconds
+            a.answer_text, a.answer_mode, a.time_taken_seconds, a.voice_analysis
      FROM answers a
      JOIN questions q ON q.id = a.question_id
      WHERE a.interview_id = $1
@@ -478,7 +483,7 @@ export async function interviewResults(req, res) {
 
   res.json({
     interview: {
-      id: interview.id,
+      id: interview.public_id,
       mode: interview.mode,
       domain: interview.domain,
       difficulty: interview.difficulty,
@@ -493,7 +498,7 @@ export async function interviewResults(req, res) {
           ? question.answer_text
           : question.answer_text,
         answer: question.answer_text
-          ? { answer_text: question.answer_text, answer_mode: question.answer_mode, time_taken_seconds: question.time_taken_seconds }
+          ? { answer_text: question.answer_text, answer_mode: question.answer_mode, time_taken_seconds: question.time_taken_seconds, voice_analysis: question.voice_analysis }
           : null,
       })),
     },
@@ -508,6 +513,7 @@ export async function interviewResults(req, res) {
       questionEvaluations,
       source: row.raw_ai_response?.source || null,
       error: row.raw_ai_response?.error || null,
+      cameraPresence: row.camera_presence_json || null,
       createdAt: row.created_at,
     },
   })
@@ -544,10 +550,10 @@ export async function retryWeakQuestions(req, res) {
     const {
       rows: [retry],
     } = await client.query(
-      `INSERT INTO interviews (user_id, mode, domain, difficulty, target_role, job_description)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id`,
-      [req.userId, source.mode, source.domain, source.difficulty, source.target_role, source.job_description]
+      `INSERT INTO interviews (public_id, user_id, mode, domain, difficulty, target_role, job_description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, public_id`,
+      [createPublicInterviewId(), req.userId, source.mode, source.domain, source.difficulty, source.target_role, source.job_description]
     )
 
     const { rows: questions } = await client.query(
@@ -566,7 +572,7 @@ export async function retryWeakQuestions(req, res) {
       )
     }
     await client.query('COMMIT')
-    res.status(201).json({ interviewId: retry.id, questionCount: questions.length })
+    res.status(201).json({ interviewId: retry.public_id, questionCount: questions.length })
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

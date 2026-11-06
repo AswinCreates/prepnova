@@ -95,6 +95,51 @@ async function requestWithRetry(model, audio, mimeType, speakerName, dedicated) 
   }
 }
 
+function parseDeliveryAnalysis(text) {
+  const source = String(text || '').trim()
+  const json = source.match(/\{[\s\S]*\}/)?.[0]
+  if (!json) throw new Error('AI returned no delivery analysis')
+  const result = JSON.parse(json)
+  const tones = ['calm', 'confident', 'nervous', 'uncertain', 'energetic', 'neutral', 'mixed']
+  const confidence = ['low', 'medium', 'high']
+  return {
+    perceivedTone: tones.includes(result.perceivedTone) ? result.perceivedTone : 'mixed',
+    confidence: confidence.includes(result.confidence) ? result.confidence : 'low',
+    cues: Array.isArray(result.cues) ? result.cues.filter((cue) => typeof cue === 'string').slice(0, 3) : [],
+    feedback: typeof result.feedback === 'string' ? result.feedback.slice(0, 500) : '',
+    disclaimer: 'This is an estimate of how the voice may come across, not a determination of the speaker’s actual emotion.',
+  }
+}
+
+export async function analyzeAudioDelivery(audio, mimeType) {
+  const instruction = [
+    'You are a supportive interview voice-delivery coach. Listen only for audible delivery cues such as pace, pauses, vocal energy, steadiness, and pitch variation.',
+    'Estimate the perceived tone from this fixed set: calm, confident, nervous, uncertain, energetic, neutral, mixed. This is only how the voice may come across; do not claim to know the speaker’s true internal emotion.',
+    'Do not infer personality, mental health, age, gender, ethnicity, or accent quality. Do not score or judge the person. Be cautious when audio is short, noisy, or unclear; use low confidence.',
+    'Give up to three concise audible cues and one specific, supportive practice suggestion. Do not infer answer content or transcribe the recording.',
+    'Return JSON only with keys perceivedTone, confidence (low|medium|high), cues (string array), feedback (string).',
+  ].join(' ')
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    const response = await fetch(`${BASE_URL}/models/${FALLBACK_MODEL}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: instruction }, { inline_data: { mime_type: mimeType, data: audio } }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 400, responseMimeType: 'application/json' },
+      }),
+      signal: controller.signal,
+    })
+    const body = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(`AI voice analysis returned HTTP ${response.status}`)
+    const text = body.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('')
+    return parseDeliveryAnalysis(text)
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export async function transcribeAudio(audio, mimeType, speakerName = '') {
   if (PROVIDER !== 'gemini' || !API_KEY) {
     const error = new Error('Voice transcription is unavailable. Configure the Gemini AI provider on the server, or use typed answer mode.')

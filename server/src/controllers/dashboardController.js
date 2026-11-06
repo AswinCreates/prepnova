@@ -27,7 +27,7 @@ export async function dashboardStats(req, res) {
 
   // Score timeline for the Recharts line chart (last 10 completed).
   const timeline = await pool.query(
-    `SELECT id, total_score AS score, completed_at AS date, domain, difficulty
+    `SELECT public_id AS id, total_score AS score, completed_at AS date, domain, difficulty
      FROM interviews
      WHERE user_id = $1 AND status = 'completed'
      ORDER BY completed_at ASC
@@ -50,7 +50,7 @@ export async function dashboardStats(req, res) {
 export async function leaderboard(req, res) {
   const result = await pool.query(
     `WITH attempts AS (
-       SELECT i.id AS interview_id,
+       SELECT i.public_id AS interview_id,
               i.user_id,
               u.name,
               u.headline,
@@ -69,7 +69,7 @@ export async function leaderboard(req, res) {
            (SELECT reset_at FROM leaderboard_control WHERE id = 1),
            '-infinity'::timestamptz
          )
-       GROUP BY i.id, u.id
+       GROUP BY i.id, i.public_id, u.id
      ), best_attempts AS (
        SELECT DISTINCT ON (user_id) *
        FROM attempts

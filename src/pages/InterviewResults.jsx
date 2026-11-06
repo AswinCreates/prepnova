@@ -7,7 +7,7 @@ import Button from '../components/Button'
 import Badge from '../components/Badge'
 import Loader from '../components/Loader'
 import PageHeader from '../components/PageHeader'
-import { BriefcaseBusiness, Download, FileText, Repeat2 } from 'lucide-react'
+import { BriefcaseBusiness, Camera, Download, FileText, Repeat2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export default function InterviewResults() {
@@ -168,6 +168,12 @@ export default function InterviewResults() {
           </Card>
         ) : null}
 
+        {evaluation.cameraPresence && <Card className="mb-6 animate-fade-in-up">
+          <h3 className="mb-2 flex items-center gap-2 font-semibold text-ink"><Camera size={17} className="text-primary" /> Camera presence practice summary</h3>
+          <p className="text-sm leading-relaxed text-muted">A face was detected in {evaluation.cameraPresence.faceVisiblePercent}% of sampled frames, across about {evaluation.cameraPresence.durationSeconds} seconds. No face was detected for {evaluation.cameraPresence.noFaceEvents} extended period{evaluation.cameraPresence.noFaceEvents === 1 ? '' : 's'}.</p>
+          <p className="mt-2 text-xs text-muted">This optional on-device check is approximate, does not identify anyone, and does not affect your interview score.</p>
+        </Card>}
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {(evaluation.strengths || []).length > 0 && (
             <Card hover className="animate-fade-in-up">
@@ -203,17 +209,20 @@ export default function InterviewResults() {
 
         <h2 className="text-lg font-semibold text-ink mb-3">Question Breakdown</h2>
         <div className="flex flex-col gap-4">
-          {questionEvaluations.map((e) => (
+          {questionEvaluations.map((e) => {
+            const question = questionById.get(String(e.questionId))
+            const voiceAnalysis = question?.answer?.voice_analysis
+            return (
             <Card key={e.questionId} hover className="animate-fade-in-up">
               <div className="flex justify-between items-start mb-2">
                 <p className="font-medium text-ink">
-                  Q{e.questionNumber}: {questionById.get(String(e.questionId))?.question_text || 'Question'}
+                  Q{e.questionNumber}: {question?.question_text || 'Question'}
                 </p>
                 <Badge variant={e.score >= 8 ? 'success' : e.score >= 6 ? 'warning' : 'danger'}>
                   {e.score}/10
                 </Badge>
               </div>
-              {questionById.get(String(e.questionId))?.question_type === 'mcq' && <p className="mb-2 rounded-lg bg-panel2 px-3 py-2 text-xs text-muted">Your answer: <span className="font-medium text-ink">{questionById.get(String(e.questionId))?.answer?.answer_text || 'No answer selected'}</span></p>}
+              {question?.answer && <p className="mb-2 rounded-lg bg-panel2 px-3 py-2 text-xs text-muted">Your {question.answer.answer_mode === 'voice' ? 'transcribed answer' : 'answer'}: <span className="font-medium text-ink">{question.answer.answer_text}</span></p>}
               <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-panel2">
                 <div
                   className={`h-full bg-gradient-to-r ${
@@ -227,8 +236,14 @@ export default function InterviewResults() {
                 />
               </div>
               <p className="text-sm text-muted">{e.feedback}</p>
+              {voiceAnalysis && <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs font-semibold text-ink">Voice delivery · perceived {voiceAnalysis.perceivedTone} tone</p>
+                {voiceAnalysis.cues?.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted">{voiceAnalysis.cues.map((cue, index) => <li key={`${index}-${cue}`}>{cue}</li>)}</ul>}
+                {voiceAnalysis.feedback && <p className="mt-2 text-xs leading-relaxed text-muted">{voiceAnalysis.feedback}</p>}
+                <p className="mt-2 text-[10px] leading-relaxed text-muted">Possible impression only ({voiceAnalysis.confidence} confidence). {voiceAnalysis.disclaimer}</p>
+              </div>}
             </Card>
-          ))}
+          )})}
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">

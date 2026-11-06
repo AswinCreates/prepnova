@@ -9,6 +9,8 @@ import dashboardRoutes from './routes/dashboard.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import notificationRoutes from './routes/notification.routes.js'
 import supportRoutes from './routes/support.routes.js'
+import maintenanceRoutes from './routes/maintenance.routes.js'
+import { enforceMaintenanceMode } from './middleware/maintenanceMode.js'
 import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -30,6 +32,9 @@ app.use(express.json({ limit: '20mb' }))
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'prepnova-api', time: new Date().toISOString() })
 })
+
+app.use('/api/maintenance', maintenanceRoutes)
+app.use(enforceMaintenanceMode)
 
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)

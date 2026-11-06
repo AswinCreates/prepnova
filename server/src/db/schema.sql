@@ -135,6 +135,7 @@ WHERE role = 'user'
 
 CREATE TABLE IF NOT EXISTS interviews (
   id            SERIAL PRIMARY KEY,
+  public_id     VARCHAR(32) NOT NULL,
   user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   mode          VARCHAR(20) NOT NULL CHECK (mode IN ('Technical','HR')),
   domain        VARCHAR(100) NOT NULL,
@@ -150,6 +151,13 @@ CREATE TABLE IF NOT EXISTS interviews (
   suspended_at  TIMESTAMPTZ
 );
 
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS public_id VARCHAR(32);
+UPDATE interviews
+SET public_id = 'i' || substr(md5(random()::text || clock_timestamp()::text || id::text), 1, 30)
+WHERE public_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_interviews_public_id ON interviews(public_id);
+ALTER TABLE interviews ALTER COLUMN public_id SET NOT NULL;
+
 ALTER TABLE interviews ADD COLUMN IF NOT EXISTS target_role VARCHAR(160);
 ALTER TABLE interviews ADD COLUMN IF NOT EXISTS job_description TEXT;
 ALTER TABLE interviews ADD COLUMN IF NOT EXISTS tab_switch_strikes INTEGER NOT NULL DEFAULT 0;
@@ -157,6 +165,11 @@ ALTER TABLE interviews ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMPTZ;
 ALTER TABLE interviews DROP CONSTRAINT IF EXISTS interviews_status_check;
 ALTER TABLE interviews ADD CONSTRAINT interviews_status_check
   CHECK (status IN ('in_progress','completed','suspended','cancelled'));
+
+UPDATE notifications n
+SET link = '/interview/results/' || i.public_id
+FROM interviews i
+WHERE n.link = '/interview/results/' || i.id::text;
 
 CREATE INDEX IF NOT EXISTS idx_interviews_user ON interviews(user_id);
 
@@ -169,6 +182,18 @@ CREATE TABLE IF NOT EXISTS leaderboard_control (
 
 INSERT INTO leaderboard_control (id, reset_at)
 VALUES (1, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Global site availability settings controlled from the admin risk console.
+CREATE TABLE IF NOT EXISTS platform_settings (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  maintenance_mode BOOLEAN NOT NULL DEFAULT false,
+  maintenance_message TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+INSERT INTO platform_settings (id) VALUES (1)
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS questions (
@@ -320,10 +345,13 @@ CREATE TABLE IF NOT EXISTS answers (
   answer_mode        VARCHAR(10) NOT NULL DEFAULT 'typed'
                      CHECK (answer_mode IN ('typed','voice')),
   time_taken_seconds INTEGER,
+  voice_analysis     JSONB,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (interview_id, question_id)
 );
+
+ALTER TABLE answers ADD COLUMN IF NOT EXISTS voice_analysis JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_answers_interview ON answers(interview_id);
 
@@ -337,8 +365,11 @@ CREATE TABLE IF NOT EXISTS evaluations (
   improvements              TEXT[] NOT NULL DEFAULT '{}',
   question_evaluations_json JSONB,
   raw_ai_response           JSONB,
+  camera_presence_json      JSONB,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE evaluations ADD COLUMN IF NOT EXISTS camera_presence_json JSONB;
 
 -- Reusable personal examples that help candidates structure behavioral answers.
 CREATE TABLE IF NOT EXISTS answer_stories (

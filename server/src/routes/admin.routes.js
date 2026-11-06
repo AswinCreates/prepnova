@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { createAdmin, createQuestion, deleteAccount, getAdminDashboard, listAccounts, listQuestions, resetLeaderboard } from '../controllers/adminController.js'
+import { createAdmin, createQuestion, deleteAccount, getAdminDashboard, listAccounts, listQuestions, resetLeaderboard, updateMaintenanceStatus } from '../controllers/adminController.js'
 import { auth } from '../middleware/auth.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { asyncHandler, validate } from '../utils/validate.js'
 import { addAdminTicketMessage, clearHistoryFromTicket, closeAdminTicket, getAdminTicket, listAdminTickets } from '../controllers/supportController.js'
+import { refreshMaintenanceCache } from '../middleware/maintenanceMode.js'
 
 const router = Router()
 const createAdminSchema = z.object({
@@ -32,9 +33,17 @@ const createQuestionSchema = z.object({
 const ticketReplySchema = z.object({
   message: z.string().trim().min(1, 'Reply cannot be empty').max(5000),
 })
+const maintenanceSchema = z.object({
+  enabled: z.boolean(),
+  message: z.string().trim().max(240, 'Maintenance message must be 240 characters or fewer').default(''),
+})
 
 router.use(auth, requireAdmin)
 router.get('/dashboard', asyncHandler(getAdminDashboard))
+router.put('/maintenance', validate(maintenanceSchema), asyncHandler(async (req, res) => {
+  await updateMaintenanceStatus(req, res)
+  refreshMaintenanceCache({ maintenance_mode: req.body.enabled, maintenance_message: req.body.message })
+}))
 router.post('/leaderboard/reset', asyncHandler(resetLeaderboard))
 router.get('/support/tickets', asyncHandler(listAdminTickets))
 router.get('/support/tickets/:id', asyncHandler(getAdminTicket))

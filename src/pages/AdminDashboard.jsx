@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import {
   Cell, Pie, PieChart, ResponsiveContainer, Tooltip,
 } from 'recharts'
-import { Activity, CalendarDays, CheckCircle2, Clock3, ClipboardCheck, Globe2, HelpCircle, LayoutDashboard, MapPin, MessagesSquare, Plus, RefreshCw, RotateCcw, ShieldCheck, Target, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
+import { Activity, AlertTriangle, CalendarDays, CheckCircle2, Clock3, ClipboardCheck, Globe2, HelpCircle, LayoutDashboard, MapPin, MessagesSquare, Plus, RefreshCw, RotateCcw, ShieldCheck, Target, Trash2, Trophy, UserPlus, Users } from 'lucide-react'
 import AdminTicketsPanel from './AdminTicketsPanel'
 import { INTERVIEW_DOMAINS } from '../constants/interviewDomains'
 
@@ -64,7 +64,7 @@ const initialQuestionForm = {
 export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedSection = searchParams.get('section')
-  const activeSection = ['overview', 'administration', 'questions', 'locations', 'tickets', 'leaderboard'].includes(requestedSection) ? requestedSection : 'overview'
+  const activeSection = ['overview', 'administration', 'questions', 'locations', 'tickets', 'leaderboard', 'risk'].includes(requestedSection) ? requestedSection : 'overview'
   const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [interviewStats, setInterviewStats] = useState(null)
@@ -81,6 +81,9 @@ export default function AdminDashboard() {
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [resettingLeaderboard, setResettingLeaderboard] = useState(false)
+  const [maintenance, setMaintenance] = useState({ enabled: false, message: '' })
+  const [maintenanceMessage, setMaintenanceMessage] = useState('')
+  const [savingMaintenance, setSavingMaintenance] = useState(false)
   const [addingQuestion, setAddingQuestion] = useState(false)
   const [form, setForm] = useState(initialAdminForm)
   const [questionForm, setQuestionForm] = useState(initialQuestionForm)
@@ -149,6 +152,17 @@ export default function AdminDashboard() {
     if (activeSection !== 'leaderboard') return
     loadLeaderboard().catch((error) => toast.error(error.response?.data?.message || 'Could not load leaderboard'))
   }, [activeSection, loadLeaderboard])
+
+  useEffect(() => {
+    if (activeSection !== 'risk') return
+    api.get('/maintenance/status')
+      .then(({ data }) => {
+        const next = { enabled: Boolean(data.enabled), message: data.message || '' }
+        setMaintenance(next)
+        setMaintenanceMessage(next.message)
+      })
+      .catch((error) => toast.error(error.response?.data?.message || 'Could not load platform settings'))
+  }, [activeSection])
 
   const chartData = useMemo(() => (stats?.trend || []).map((item) => ({
     ...item,
@@ -252,6 +266,27 @@ export default function AdminDashboard() {
     }
   }
 
+  const saveMaintenance = async (enabled, message = maintenanceMessage) => {
+    setSavingMaintenance(true)
+    try {
+      const { data } = await api.put('/admin/maintenance', { enabled, message })
+      const next = { enabled: Boolean(data.enabled), message: data.message || '' }
+      setMaintenance(next)
+      setMaintenanceMessage(next.message)
+      toast.success(next.enabled ? 'Maintenance mode enabled for users' : 'Maintenance mode disabled')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not update maintenance mode')
+    } finally {
+      setSavingMaintenance(false)
+    }
+  }
+
+  const handleMaintenanceToggle = () => {
+    const nextEnabled = !maintenance.enabled
+    if (nextEnabled && !window.confirm('Enable maintenance mode? All non-admin visitors will be redirected to the maintenance page until an admin turns it off.')) return
+    saveMaintenance(nextEnabled)
+  }
+
   if (loading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Loader size="lg" /></div>
   }
@@ -287,6 +322,7 @@ export default function AdminDashboard() {
           { id: 'locations', label: 'Locations', Icon: MapPin },
           { id: 'tickets', label: 'Support tickets', Icon: MessagesSquare },
           { id: 'leaderboard', label: 'Leaderboard', Icon: Trophy },
+          { id: 'risk', label: 'Risk', Icon: AlertTriangle },
         ].map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -545,6 +581,42 @@ export default function AdminDashboard() {
       </>}
 
       {activeSection === 'tickets' && <AdminTicketsPanel />}
+
+      {activeSection === 'risk' && <>
+        <Card className="animate-fade-in-up border-warning/25">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-warning/10 text-warning"><AlertTriangle size={20} /></span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold text-ink">Site maintenance</h2><Badge variant={maintenance.enabled ? 'danger' : 'success'}>{maintenance.enabled ? 'Enabled' : 'Off'}</Badge></div>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted">Temporarily place PrepNova in maintenance mode while you make changes. Regular visitors will see the animated maintenance page; admins can still sign in and access this console.</p>
+              </div>
+            </div>
+            <label className="inline-flex shrink-0 cursor-pointer items-center gap-3 rounded-xl border border-line bg-panel2 px-4 py-3">
+              <input type="checkbox" checked={maintenance.enabled} onChange={handleMaintenanceToggle} disabled={savingMaintenance} className="peer sr-only" />
+              <span aria-hidden="true" className={`relative h-6 w-11 rounded-full transition-colors ${maintenance.enabled ? 'bg-danger' : 'bg-line'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${maintenance.enabled ? 'translate-x-[22px]' : 'translate-x-0.5'}`} /></span>
+              <span className="text-xs font-semibold text-ink">{maintenance.enabled ? 'On' : 'Off'}</span>
+            </label>
+          </div>
+          <div className="mt-5 border-t border-line pt-4">
+            <label htmlFor="maintenance-message" className="block text-xs font-semibold text-ink">Message for visitors <span className="font-normal text-muted">(optional)</span></label>
+            <p className="mt-1 text-[11px] text-muted">This message appears on the maintenance page. Leave blank to use the default message.</p>
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <textarea id="maintenance-message" value={maintenanceMessage} onChange={(event) => setMaintenanceMessage(event.target.value)} maxLength={240} rows={2} placeholder="We’re improving the interview experience. Please check back shortly." className="min-h-[72px] flex-1 resize-y rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20" />
+              <Button type="button" variant="outline" loading={savingMaintenance} disabled={maintenanceMessage === maintenance.message} onClick={() => saveMaintenance(maintenance.enabled)} className="shrink-0">Save message</Button>
+            </div>
+            <p className="mt-2 text-right text-[10px] text-muted">{maintenanceMessage.length}/240</p>
+          </div>
+        </Card>
+        <Card className="animate-fade-in-up">
+          <h3 className="text-sm font-semibold text-ink">What happens when it is enabled?</h3>
+          <ul className="mt-3 space-y-2 text-xs leading-relaxed text-muted">
+            <li>• Visitors and regular accounts see a branded, animated maintenance page.</li>
+            <li>• Their app API requests are paused and receive a maintenance response.</li>
+            <li>• Admins retain access to the console and can turn maintenance off at any time.</li>
+          </ul>
+        </Card>
+      </>}
 
       {activeSection === 'leaderboard' && <>
       <Card className="animate-fade-in-up border-danger/20">

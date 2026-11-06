@@ -7,6 +7,7 @@ import Button from '../components/Button'
 import Badge from '../components/Badge'
 import Loader from '../components/Loader'
 import SpeechInterview from '../components/SpeechInterview'
+import FacePresenceMonitor from '../components/FacePresenceMonitor'
 import { useTimer } from '../hooks/useTimer'
 import { getQuestionTimeLimit } from '../utils/interviewTiming'
 import { CheckCircle2, ClipboardCheck, MessageSquareText, Sparkles } from 'lucide-react'
@@ -20,18 +21,23 @@ export default function InterviewSession() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answer, setAnswer] = useState('')
   const [answerMode, setAnswerMode] = useState('typed')
+  const [voiceRecording, setVoiceRecording] = useState(null)
   const [answers, setAnswers] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const [analysisProgress, setAnalysisProgress] = useState(null)
   const [tabSwitchStrikes, setTabSwitchStrikes] = useState(0)
+  const [difficulty, setDifficulty] = useState('Medium')
+  const [cameraStarting, setCameraStarting] = useState(false)
   const [secondsPerQuestion, setSecondsPerQuestion] = useState(getQuestionTimeLimit('Medium'))
   const monitorDataRef = useRef({ enabled: false })
+  const facePresenceRef = useRef(null)
   const hiddenRef = useRef(false)
   const strikeInFlightRef = useRef(false)
 
   const current = questions[currentIndex]
   const isLastQuestion = currentIndex === questions.length - 1
 
-  const { secondsLeft, formatted, reset } = useTimer(secondsPerQuestion, () => handleNext())
+  const { secondsLeft, formatted, reset } = useTimer(secondsPerQuestion, () => handleNext(), cameraStarting)
 
   useEffect(() => {
     monitorDataRef.current = {
@@ -39,9 +45,10 @@ export default function InterviewSession() {
       questionId: current?.id,
       answer,
       answerMode,
+      voiceRecording,
       timeTakenSeconds: Math.max(0, secondsPerQuestion - secondsLeft),
     }
-  }, [current?.id, answer, answerMode, secondsPerQuestion, secondsLeft])
+  }, [current?.id, answer, answerMode, voiceRecording, secondsPerQuestion, secondsLeft])
 
   useEffect(() => {
     let active = true
@@ -50,6 +57,7 @@ export default function InterviewSession() {
       .then((res) => {
         if (!active) return
         const iv = res.data.interview
+        setDifficulty(iv.difficulty || 'Medium')
         const questionTimeLimit = getQuestionTimeLimit(iv.difficulty)
         setSecondsPerQuestion(questionTimeLimit)
         reset(questionTimeLimit)
@@ -119,12 +127,40 @@ export default function InterviewSession() {
   const submitAndComplete = async (finalAnswers) => {
     if (submitting) return
     const startedAt = Date.now()
+    const cameraPresence = facePresenceRef.current?.getSummary() || null
     setSubmitting(true)
     try {
-      await api.post(`/interviews/${id}/complete`, { answers: finalAnswers })
+      const preparedAnswers = finalAnswers.map((entry) => ({ ...entry }))
+      const recordedAnswers = preparedAnswers.filter((entry) => entry.voiceRecording?.audio)
+      let analysisFailures = 0
+      for (let index = 0; index < recordedAnswers.length; index += 1) {
+        const entry = recordedAnswers[index]
+        setAnalysisProgress({ completed: index, total: recordedAnswers.length })
+        try {
+          const { data } = await api.post(`/interviews/${id}/voice-analysis`, {
+            questionId: entry.questionId,
+            audio: entry.voiceRecording.audio,
+            mimeType: entry.voiceRecording.mimeType,
+          }, { timeout: 90_000 })
+          entry.voiceAnalysis = data.deliveryAnalysis || null
+        } catch {
+          analysisFailures += 1
+          entry.voiceAnalysis = null
+        }
+        setAnalysisProgress({ completed: index + 1, total: recordedAnswers.length })
+      }
+      const answersForSaving = preparedAnswers.map((entry) => ({
+        questionId: entry.questionId,
+        answerText: entry.answerText,
+        answerMode: entry.answerMode,
+        timeTakenSeconds: entry.timeTakenSeconds,
+        voiceAnalysis: entry.voiceAnalysis || null,
+      }))
+      await api.post(`/interviews/${id}/complete`, { answers: answersForSaving, cameraPresence })
       const visibleFor = Date.now() - startedAt
       if (visibleFor < 1000) await new Promise((resolve) => setTimeout(resolve, 1000 - visibleFor))
       toast.success('Interview completed!')
+      if (analysisFailures) toast(`Voice feedback was unavailable for ${analysisFailures} spoken response${analysisFailures === 1 ? '' : 's'}.`)
       navigate(`/interview/results/${id}`)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not submit your interview')
@@ -132,30 +168,57 @@ export default function InterviewSession() {
     }
   }
 
-  function handleNext() {
+  function handleNext(override = {}) {
     if (!current || submitting) return
     const entry = {
       questionId: current.id,
-      answerText: answer,
-      answerMode,
+      answerText: override.answerText ?? answer,
+      answerMode: override.answerMode ?? answerMode,
       timeTakenSeconds: Math.max(0, secondsPerQuestion - secondsLeft),
+      voiceAnalysis: null,
+      voiceRecording: (override.answerMode ?? answerMode) === 'voice'
+        ? (override.voiceRecording !== undefined ? override.voiceRecording : voiceRecording)
+        : null,
     }
-    const updatedAnswers = [...answers, entry]
+    const updatedAnswers = [...answers.filter((saved) => saved.questionId !== entry.questionId), entry]
     setAnswers(updatedAnswers)
 
     if (isLastQuestion) {
       submitAndComplete(updatedAnswers)
       return
     }
-    setCurrentIndex((i) => i + 1)
-    setAnswer('')
-    setAnswerMode('typed')
+    const nextQuestion = questions[currentIndex + 1]
+    const savedNextAnswer = updatedAnswers.find((saved) => saved.questionId === nextQuestion?.id)
+    setCurrentIndex((index) => index + 1)
+    setAnswer(savedNextAnswer?.answerText || '')
+    setAnswerMode(savedNextAnswer?.answerMode || 'typed')
+    setVoiceRecording(savedNextAnswer?.voiceRecording || null)
     reset(secondsPerQuestion)
   }
 
-  const handleVoiceAnswer = (text) => {
-    setAnswer(text)
-    setAnswerMode('voice')
+  function handlePrevious() {
+    if (difficulty !== 'Easy' || currentIndex <= 0 || submitting) return
+    const currentEntry = {
+      questionId: current.id,
+      answerText: answer,
+      answerMode,
+      timeTakenSeconds: Math.max(0, secondsPerQuestion - secondsLeft),
+      voiceAnalysis: null,
+      voiceRecording: answerMode === 'voice' ? voiceRecording : null,
+    }
+    const updatedAnswers = [...answers.filter((saved) => saved.questionId !== currentEntry.questionId), currentEntry]
+    const previousQuestion = questions[currentIndex - 1]
+    const savedPreviousAnswer = updatedAnswers.find((saved) => saved.questionId === previousQuestion?.id)
+    setAnswers(updatedAnswers)
+    setCurrentIndex((index) => index - 1)
+    setAnswer(savedPreviousAnswer?.answerText || '')
+    setAnswerMode(savedPreviousAnswer?.answerMode || 'typed')
+    setVoiceRecording(savedPreviousAnswer?.voiceRecording || null)
+    reset(secondsPerQuestion)
+  }
+
+  const handleVoiceAnswer = (text, recording) => {
+    handleNext({ answerText: text, answerMode: 'voice', voiceRecording: recording || null })
   }
   if (loading) {
     return (
@@ -180,7 +243,9 @@ export default function InterviewSession() {
           <div className="my-7 flex justify-center"><Loader size="md" /></div>
           <div className="space-y-3 rounded-xl border border-line bg-panel2 p-4 text-left">
             <p className="flex items-center gap-3 text-xs text-ink"><MessageSquareText size={16} className="text-primary" /> Reviewing {answers.length + 1} interview responses</p>
-            <p className="flex items-center gap-3 text-xs text-ink"><ClipboardCheck size={16} className="text-primary" /> Organizing your question-by-question feedback</p>
+            {analysisProgress
+              ? <p className="flex items-center gap-3 text-xs text-ink"><ClipboardCheck size={16} className="text-primary" /> Reviewing voice delivery {analysisProgress.completed} of {analysisProgress.total}</p>
+              : <p className="flex items-center gap-3 text-xs text-ink"><ClipboardCheck size={16} className="text-primary" /> Organizing your question-by-question feedback</p>}
           </div>
           <p className="mt-5 text-[11px] text-muted">This can take a moment. Please keep this page open.</p>
         </Card>
@@ -237,6 +302,8 @@ export default function InterviewSession() {
           />
         </div>
 
+        <FacePresenceMonitor ref={facePresenceRef} onStartingChange={setCameraStarting} />
+
         <Card className="animate-fade-in-up">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             {current.category || 'Interview Question'}
@@ -265,7 +332,7 @@ export default function InterviewSession() {
           <div className="mb-4 mt-4 inline-flex rounded-xl border border-line bg-panel2 p-1">
             <button
               type="button"
-              onClick={() => setAnswerMode('typed')}
+              onClick={() => { setAnswerMode('typed'); setVoiceRecording(null) }}
               className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
                 answerMode === 'typed'
                   ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-md shadow-primary/25'
@@ -288,11 +355,17 @@ export default function InterviewSession() {
           </div>
 
           {answerMode === 'voice' ? (
-            <SpeechInterview question={current.question_text} onAnswerSubmitted={handleVoiceAnswer} />
+            <SpeechInterview
+              key={current.id}
+              question={current.question_text}
+              initialAnswer={answerMode === 'voice' ? answer : ''}
+              initialRecording={answerMode === 'voice' ? voiceRecording : null}
+              onAnswerSubmitted={handleVoiceAnswer}
+            />
           ) : (
             <textarea
               value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              onChange={(e) => { setAnswer(e.target.value); setVoiceRecording(null) }}
               placeholder="Type your answer here..."
               rows={8}
               className="w-full resize-none rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60"
@@ -302,7 +375,7 @@ export default function InterviewSession() {
 
           {answerMode === 'voice' && answer.trim() ? (
             <p className="mt-3 text-xs text-muted animate-fade-in">
-              ✅ Voice answer captured for this question. Press next when ready.
+              Voice answer saved for this question.
             </p>
           ) : null}
 
@@ -310,9 +383,12 @@ export default function InterviewSession() {
             <span className="text-xs text-muted">
               {answer.trim() ? 'Answer ready' : 'No answer yet'}
             </span>
-            <Button onClick={handleNext} loading={submitting} disabled={submitting}>
-              {isLastQuestion ? 'Finish Interview' : 'Next Question →'}
-            </Button>
+            <div className="flex items-center gap-2">
+              {difficulty === 'Easy' && currentIndex > 0 && <Button variant="outline" onClick={handlePrevious} disabled={submitting}>Previous</Button>}
+              <Button onClick={() => handleNext()} loading={submitting} disabled={submitting}>
+                {isLastQuestion ? 'Finish Interview' : 'Next Question →'}
+              </Button>
+            </div>
           </div>
         </Card>
     </div>

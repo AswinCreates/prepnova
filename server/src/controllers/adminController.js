@@ -134,6 +134,39 @@ export async function getAdminDashboard(_req, res) {
   })
 }
 
+export async function getMaintenanceStatus(_req, res) {
+  const { rows: [settings] } = await pool.query(
+    `SELECT maintenance_mode, maintenance_message, updated_at
+     FROM platform_settings WHERE id = 1`
+  )
+  res.json({
+    enabled: Boolean(settings?.maintenance_mode),
+    message: settings?.maintenance_message || '',
+    updatedAt: settings?.updated_at || null,
+  })
+}
+
+export async function updateMaintenanceStatus(req, res) {
+  const enabled = Boolean(req.body.enabled)
+  const message = (req.body.message || '').trim()
+  const { rows: [settings] } = await pool.query(
+    `INSERT INTO platform_settings (id, maintenance_mode, maintenance_message, updated_at, updated_by)
+     VALUES (1, $1, $2, now(), $3)
+     ON CONFLICT (id) DO UPDATE
+     SET maintenance_mode = EXCLUDED.maintenance_mode,
+         maintenance_message = EXCLUDED.maintenance_message,
+         updated_at = now(),
+         updated_by = EXCLUDED.updated_by
+     RETURNING maintenance_mode, maintenance_message, updated_at`,
+    [enabled, message, req.userId]
+  )
+  res.json({
+    enabled: settings.maintenance_mode,
+    message: settings.maintenance_message,
+    updatedAt: settings.updated_at,
+  })
+}
+
 export async function resetLeaderboard(req, res) {
   const client = await pool.connect()
   try {

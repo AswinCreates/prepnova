@@ -19,12 +19,14 @@ import NotFound from './pages/NotFound'
 import SupportPage from './pages/SupportPage'
 import StoryVault from './pages/StoryVault'
 import CookieConsent from './components/CookieConsent'
+import MaintenanceGate from './components/MaintenanceGate'
 
 function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <BrowserRouter>
+          <MaintenanceGate>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -54,6 +56,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsent />
+          </MaintenanceGate>
         </BrowserRouter>
       </AuthProvider>
     </ErrorBoundary>

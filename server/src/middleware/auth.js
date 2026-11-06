@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import { randomUUID } from 'node:crypto'
 import { ApiError } from './errorHandler.js'
 
-const SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret-change-me'
+export const SESSION_JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret-change-me'
 export const SESSION_COOKIE_NAME = 'prepnova_session'
 const COOKIE_SAME_SITE = (process.env.COOKIE_SAME_SITE || 'lax').toLowerCase()
 const COOKIE_SECURE = process.env.NODE_ENV === 'production' || COOKIE_SAME_SITE === 'none'
@@ -42,7 +42,7 @@ export function auth(req, _res, next) {
   if (!token) return next(new ApiError(401, 'Not authenticated'))
 
   try {
-    const payload = jwt.verify(token, SECRET)
+    const payload = jwt.verify(token, SESSION_JWT_SECRET)
     req.userId = payload.id
     req.authSource = cookieToken ? 'cookie' : 'bearer'
     return next()
@@ -51,8 +51,17 @@ export function auth(req, _res, next) {
   }
 }
 
+export function getSessionPayload(req) {
+  const cookieToken = readCookie(req, SESSION_COOKIE_NAME)
+  const header = req.headers.authorization || ''
+  const bearerToken = header.startsWith('Bearer ') ? header.slice(7) : null
+  const token = cookieToken || bearerToken
+  if (!token) return null
+  try { return jwt.verify(token, SESSION_JWT_SECRET) } catch { return null }
+}
+
 export function signToken(userId, rememberMe = false) {
-  return jwt.sign({ id: userId }, SECRET, {
+  return jwt.sign({ id: userId }, SESSION_JWT_SECRET, {
     jwtid: randomUUID(),
     expiresIn: rememberMe ? '30d' : process.env.JWT_EXPIRES_IN || '7d',
   })
